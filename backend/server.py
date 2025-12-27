@@ -143,6 +143,15 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 @api_router.post("/payment/create-order")
 async def create_payment_order(order: PaymentOrderCreate):
     try:
+        if USE_MOCK_PAYMENT:
+            mock_order_id = f"mock_order_{datetime.now(timezone.utc).timestamp()}"
+            return {
+                "order_id": mock_order_id,
+                "amount": order.amount,
+                "currency": "INR",
+                "mock": True
+            }
+        
         razorpay_order = razorpay_client.order.create({
             "amount": order.amount,
             "currency": "INR",
@@ -159,6 +168,11 @@ async def create_payment_order(order: PaymentOrderCreate):
 @api_router.post("/payment/verify")
 async def verify_payment(payment: PaymentVerify):
     try:
+        if USE_MOCK_PAYMENT:
+            if payment.order_id.startswith("mock_order_") and payment.payment_id.startswith("mock_pay_"):
+                return {"status": "success", "message": "Mock payment verified successfully"}
+            raise HTTPException(status_code=400, detail="Invalid mock payment")
+        
         params_dict = {
             'razorpay_order_id': payment.order_id,
             'razorpay_payment_id': payment.payment_id,

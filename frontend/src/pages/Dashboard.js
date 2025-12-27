@@ -160,6 +160,66 @@ const Dashboard = ({ user, setUser }) => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Critical Tasks Alert Dialog */}
+      <Dialog open={showCriticalAlert} onOpenChange={setShowCriticalAlert}>
+        <DialogContent className="max-w-2xl border-red-600 border-2">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-2xl text-red-600">
+              <Bell className="w-6 h-6 animate-pulse" />
+              SUPER IMPORTANT TASKS ALERT
+            </DialogTitle>
+            <DialogDescription>
+              You have {criticalTasks.length} super important task(s) that require immediate attention!
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {criticalTasks.map((task) => (
+              <div
+                key={task.id}
+                className="border-2 border-red-600 bg-red-50 p-4 rounded-sm cursor-pointer hover:bg-red-100 transition-colors"
+                onClick={() => {
+                  setShowCriticalAlert(false);
+                  navigate(`/tasks/${task.id}`);
+                }}
+                data-testid={`critical-task-${task.id}`}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <h4 className="text-lg font-bold text-red-900">{task.title}</h4>
+                  <span className="text-xs uppercase tracking-wider font-bold text-red-600 bg-red-200 px-2 py-1 rounded">
+                    SUPER IMPORTANT
+                  </span>
+                </div>
+                {task.description && (
+                  <p className="text-sm text-red-800 mb-2">{task.description}</p>
+                )}
+                <div className="flex items-center gap-4 text-xs text-red-700">
+                  {task.scheduled_date && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="w-3 h-3" />
+                      {task.scheduled_date} {task.scheduled_time && `at ${task.scheduled_time}`}
+                    </span>
+                  )}
+                  {task.assignee_name && (
+                    <span>Assigned to: {task.assignee_name}</span>
+                  )}
+                  <span className="ml-auto uppercase font-medium">{task.status.replace("_", " ")}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-between items-center pt-4 border-t">
+            <p className="text-sm text-muted-foreground">Click on any task to view details</p>
+            <Button
+              onClick={() => setShowCriticalAlert(false)}
+              data-testid="close-critical-alert-btn"
+            >
+              <X className="w-4 h-4 mr-2" />
+              CLOSE
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <nav className="border-b border-border">
         <div className="max-w-7xl mx-auto px-6 md:px-12 py-6 flex justify-between items-center">
           <h1 className="text-2xl font-bold tracking-tight" data-testid="dashboard-logo">TASKPRO</h1>

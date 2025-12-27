@@ -199,7 +199,19 @@ const TaskFormPage = ({ user, setUser }) => {
                 required
                 data-testid="task-title-input"
                 className="mt-2"
+                list="title-suggestions"
+                placeholder="e.g., Complete project report, Review documents..."
               />
+              <datalist id="title-suggestions">
+                {suggestions.titles.map((title, idx) => (
+                  <option key={idx} value={title} />
+                ))}
+              </datalist>
+              {suggestions.titles.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  💡 {suggestions.titles.length} suggestion(s) available - start typing to see them
+                </p>
+              )}
             </div>
 
             <div className="md:col-span-2">

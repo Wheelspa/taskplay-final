@@ -364,7 +364,7 @@ const Dashboard = ({ user, setUser }) => {
                         </div>
                         <div className="flex items-center gap-3">
                           <span className={`text-xs uppercase tracking-wider font-medium ${getPriorityColor(task.priority)}`}>
-                            {task.priority}
+                            {task.priority === "super_important" ? "🔥 SUPER IMPORTANT" : task.priority}
                           </span>
                           <div className="flex items-center gap-2 px-3 py-1 rounded-sm border border-border bg-secondary">
                             <div className="flex items-center gap-1">

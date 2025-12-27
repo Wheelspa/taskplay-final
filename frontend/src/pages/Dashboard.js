@@ -169,13 +169,45 @@ const Dashboard = ({ user, setUser }) => {
           <div className="lg:col-span-2">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-2xl font-medium tracking-tight" data-testid="recent-tasks-heading">RECENT TASKS</h3>
-              <Button
-                onClick={() => navigate("/tasks/new")}
-                data-testid="create-task-btn"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                NEW TASK
-              </Button>
+              <div className="flex gap-2">
+                {stats?.completed > 0 && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        data-testid="clear-completed-btn"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        CLEAR COMPLETED
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Clear Completed Tasks</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete all {stats.completed} completed task(s). This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel data-testid="cancel-clear-btn">CANCEL</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleClearCompleted}
+                          data-testid="confirm-clear-btn"
+                        >
+                          DELETE COMPLETED TASKS
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+                <Button
+                  onClick={() => navigate("/tasks/new")}
+                  data-testid="create-task-btn"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  NEW TASK
+                </Button>
+              </div>
             </div>
             
             {recentTasks.length === 0 ? (

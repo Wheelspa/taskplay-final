@@ -132,9 +132,11 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
     
-    user = await db.users.find_one({"_id": user_id}, {"_id": 0})
+    user = await db.users.find_one({"_id": user_id})
     if user is None:
         raise HTTPException(status_code=401, detail="User not found")
+    # Convert _id to id for consistency
+    user["id"] = user["_id"]
     return user
 
 @api_router.post("/payment/create-order")

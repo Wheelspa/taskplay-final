@@ -60,10 +60,33 @@ const TaskFormPage = ({ user, setUser }) => {
   });
 
   useEffect(() => {
+    fetchSuggestions();
     if (isEdit) {
       fetchTask();
     }
   }, [taskId]);
+
+  const fetchSuggestions = async () => {
+    try {
+      const response = await axios.get(`${API}/tasks`);
+      const tasks = response.data;
+      
+      // Extract unique suggestions from existing tasks
+      const uniqueTitles = [...new Set(tasks.map(t => t.title).filter(Boolean))];
+      const uniqueNames = [...new Set(tasks.map(t => t.assignee_name).filter(Boolean))];
+      const uniquePhones = [...new Set(tasks.map(t => t.assignee_phone).filter(Boolean))];
+      const uniqueLocations = [...new Set(tasks.map(t => t.location_address).filter(Boolean))];
+      
+      setSuggestions({
+        titles: uniqueTitles,
+        assigneeNames: uniqueNames,
+        assigneePhones: uniquePhones,
+        locations: uniqueLocations
+      });
+    } catch (error) {
+      console.error("Failed to fetch suggestions:", error);
+    }
+  };
 
   const fetchTask = async () => {
     try {

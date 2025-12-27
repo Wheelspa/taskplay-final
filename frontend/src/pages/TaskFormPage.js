@@ -235,7 +235,19 @@ const TaskFormPage = ({ user, setUser }) => {
                 onChange={(e) => setFormData({ ...formData, assignee_name: e.target.value })}
                 data-testid="task-assignee-name-input"
                 className="mt-2"
+                list="assignee-name-suggestions"
+                placeholder="e.g., John Doe, Sarah Smith..."
               />
+              <datalist id="assignee-name-suggestions">
+                {suggestions.assigneeNames.map((name, idx) => (
+                  <option key={idx} value={name} />
+                ))}
+              </datalist>
+              {suggestions.assigneeNames.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  💡 {suggestions.assigneeNames.length} name(s) from previous tasks
+                </p>
+              )}
             </div>
 
             <div>
@@ -247,7 +259,19 @@ const TaskFormPage = ({ user, setUser }) => {
                 onChange={(e) => setFormData({ ...formData, assignee_phone: e.target.value })}
                 data-testid="task-assignee-phone-input"
                 className="mt-2"
+                list="assignee-phone-suggestions"
+                placeholder="e.g., 9876543210"
               />
+              <datalist id="assignee-phone-suggestions">
+                {suggestions.assigneePhones.map((phone, idx) => (
+                  <option key={idx} value={phone} />
+                ))}
+              </datalist>
+              {suggestions.assigneePhones.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  💡 {suggestions.assigneePhones.length} phone(s) from previous tasks
+                </p>
+              )}
             </div>
 
             <div>

@@ -341,10 +341,10 @@ async def update_task(
         {"$set": update_data}
     )
     
-    updated_task = await db.tasks.find_one({"_id": task_id}, {"_id": 0})
+    updated_task = await db.tasks.find_one({"_id": task_id})
     
     return TaskResponse(
-        id=updated_task["id"],
+        id=updated_task["_id"],
         title=updated_task["title"],
         description=updated_task.get("description"),
         assignee_name=updated_task.get("assignee_name"),

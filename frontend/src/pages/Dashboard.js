@@ -72,6 +72,8 @@ const Dashboard = ({ user, setUser }) => {
 
   const getPriorityColor = (priority) => {
     switch (priority) {
+      case "super_important":
+        return "text-red-600 font-bold animate-pulse";
       case "high":
         return "text-accent";
       case "medium":

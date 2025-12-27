@@ -1,0 +1,139 @@
+{
+  "design_system": {
+    "name": "Swiss Utility",
+    "description": "A high-contrast, precision-focused design system inspired by Swiss International Style. It prioritizes content hierarchy, grid alignment, and functional clarity over decoration. The aesthetic is 'Control Room' meets 'Art Gallery'.",
+    "theme_strategy": "toggle",
+    "typography": {
+      "font_family": {
+        "heading": "Outfit, sans-serif",
+        "body": "Plus Jakarta Sans, sans-serif",
+        "mono": "JetBrains Mono, monospace"
+      },
+      "scaling": {
+        "h1": "text-5xl md:text-7xl font-bold tracking-tight leading-none",
+        "h2": "text-4xl md:text-5xl font-semibold tracking-tight",
+        "h3": "text-2xl md:text-3xl font-medium tracking-normal",
+        "body": "text-base md:text-lg leading-relaxed",
+        "small": "text-sm font-medium tracking-wide uppercase",
+        "mono": "text-xs md:text-sm font-mono tracking-tight"
+      },
+      "imports": [
+        "@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');"
+      ]
+    },
+    "colors": {
+      "palette": {
+        "light": {
+          "background": "#ffffff",
+          "foreground": "#050505",
+          "primary": "#0047AB",
+          "primary_foreground": "#ffffff",
+          "secondary": "#F2F2F2",
+          "secondary_foreground": "#000000",
+          "accent": "#FF4F00",
+          "accent_foreground": "#ffffff",
+          "muted": "#F5F5F5",
+          "muted_foreground": "#666666",
+          "border": "#E5E5E5",
+          "input": "#E5E5E5",
+          "ring": "#0047AB"
+        },
+        "dark": {
+          "background": "#050505",
+          "foreground": "#ffffff",
+          "primary": "#2E67F8",
+          "primary_foreground": "#ffffff",
+          "secondary": "#1A1A1A",
+          "secondary_foreground": "#ffffff",
+          "accent": "#FF5F1F",
+          "accent_foreground": "#ffffff",
+          "muted": "#1A1A1A",
+          "muted_foreground": "#A3A3A3",
+          "border": "#262626",
+          "input": "#262626",
+          "ring": "#2E67F8"
+        }
+      },
+      "usage": {
+        "primary": "Main actions (Submit, Create), Active states, Brand highlights",
+        "secondary": "Secondary actions (Cancel, Back), Backgrounds for cards",
+        "accent": "Critical alerts, 'New' badges, Call-to-action highlights",
+        "muted": "Subtitles, Disabled states, Borders"
+      }
+    },
+    "layout": {
+      "spacing": {
+        "container_padding": "p-6 md:p-12 lg:p-24",
+        "section_gap": "gap-12 md:gap-24",
+        "element_gap": "gap-4 md:gap-8"
+      },
+      "grids": {
+        "dashboard": "grid grid-cols-1 md:grid-cols-12 gap-4 auto-rows-[minmax(180px,auto)]",
+        "landing": "grid grid-cols-1 md:grid-cols-12 gap-y-12 gap-x-8",
+        "form": "grid grid-cols-1 md:grid-cols-2 gap-6"
+      },
+      "border_radius": {
+        "default": "rounded-none",
+        "button": "rounded-sm",
+        "card": "rounded-sm",
+        "input": "rounded-none"
+      }
+    },
+    "components": {
+      "buttons": {
+        "base": "inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+        "variants": {
+          "default": "bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-6 py-2 uppercase tracking-wider",
+          "outline": "border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-6 py-2 uppercase tracking-wider",
+          "ghost": "hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2",
+          "link": "text-primary underline-offset-4 hover:underline h-10 px-0 py-2"
+        }
+      },
+      "cards": {
+        "base": "bg-card text-card-foreground border border-border shadow-none",
+        "hover": "hover:border-primary/50 transition-colors duration-300"
+      },
+      "inputs": {
+        "base": "flex h-10 w-full border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 rounded-none focus:border-primary transition-colors"
+      }
+    },
+    "motion": {
+      "transitions": {
+        "default": "transition-all duration-200 ease-out",
+        "slow": "transition-all duration-500 ease-in-out",
+        "hover": "transition-colors duration-200"
+      },
+      "animations": {
+        "fade_in": "animate-in fade-in duration-500",
+        "slide_up": "animate-in slide-in-from-bottom-4 duration-500",
+        "accordion_down": "accordion-down 0.2s ease-out",
+        "accordion_up": "accordion-up 0.2s ease-out"
+      }
+    },
+    "assets": {
+      "icons": {
+        "library": "lucide-react",
+        "style": "stroke-width={1.5} className='w-5 h-5'"
+      },
+      "images": {
+        "hero_bg": "https://images.unsplash.com/photo-1692889783742-7d99b124c402?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3MjQyMTd8MHwxfHNlYXJjaHwxfHxtaW5pbWFsaXN0JTIwYWJzdHJhY3QlMjBnZW9tZXRyaWMlMjBzaGFwZXMlMjB3aGl0ZSUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzY2NzQyMTUwfDA&ixlib=rb-4.1.0&q=85",
+        "team_meeting": "https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg",
+        "collaboration": "https://images.pexels.com/photos/3194524/pexels-photo-3194524.jpeg",
+        "abstract_shape": "https://images.unsplash.com/photo-1761577680751-0f3e25c7a8bd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3MjQyMTd8MHwxfHNlYXJjaHwzfHxtaW5pbWFsaXN0JTIwYWJzdHJhY3QlMjBnZW9tZXRyaWMlMjBzaGFwZXMlMjB3aGl0ZSUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzY2NzQyMTUwfDA&ixlib=rb-4.1.0&q=85"
+      }
+    },
+    "universal_guidelines": [
+      "Do not use gradients for backgrounds; use solid colors or subtle noise textures.",
+      "Ensure all interactive elements have a `data-testid` attribute.",
+      "Use `sonner` for toast notifications.",
+      "Use `lucide-react` for icons.",
+      "Avoid 'Inter' font for headings; use 'Outfit'.",
+      "Maintain high contrast ratios (APCA preferred).",
+      "Use 'Control Room' grid density for dashboards.",
+      "Use 'Tetris' grid asymmetry for marketing pages.",
+      "Never center text by default; prefer left alignment for readability.",
+      "Use 2x-3x more padding than standard Tailwind defaults."
+    ],
+    "instructions_to_main_agent": "Follow the 'Swiss Utility' design system. Implement the 'Control Room' grid for the dashboard and 'Tetris' grid for the landing page. Use the specified color palette and typography. Ensure all components are accessible and responsive. Use the provided image URLs for placeholders."
+  }
+}

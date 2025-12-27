@@ -169,7 +169,7 @@ const Dashboard = ({ user, setUser }) => {
           <p className="text-muted-foreground">Overview of your task management</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-12">
           <div className="border border-border bg-secondary p-6 rounded-sm" data-testid="stat-total">
             <ListTodo className="w-6 h-6 mb-3 text-primary" />
             <div className="text-3xl font-bold mb-1">{stats?.total || 0}</div>
@@ -198,6 +198,17 @@ const Dashboard = ({ user, setUser }) => {
             <AlertCircle className="w-6 h-6 mb-3 text-accent" />
             <div className="text-3xl font-bold mb-1">{stats?.high_priority || 0}</div>
             <div className="text-sm text-muted-foreground uppercase tracking-wide">High Priority</div>
+          </div>
+
+          <div className="border border-border bg-primary/10 p-6 rounded-sm" data-testid="stat-progress">
+            <div className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Overall Progress</div>
+            <div className="text-3xl font-bold mb-2 text-primary">{calculateOverallProgress()}%</div>
+            <div className="w-full bg-muted rounded-full h-2">
+              <div 
+                className="bg-primary h-2 rounded-full transition-all duration-500"
+                style={{ width: `${calculateOverallProgress()}%` }}
+              ></div>
+            </div>
           </div>
         </div>
 

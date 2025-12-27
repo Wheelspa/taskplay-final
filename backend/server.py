@@ -192,14 +192,22 @@ async def register(user: UserRegister):
     is_paid = False
     if user.payment_order_id and user.payment_id and user.payment_signature:
         try:
-            params_dict = {
-                'razorpay_order_id': user.payment_order_id,
-                'razorpay_payment_id': user.payment_id,
-                'razorpay_signature': user.payment_signature
-            }
-            razorpay_client.utility.verify_payment_signature(params_dict)
-            is_paid = True
-        except:
+            if USE_MOCK_PAYMENT:
+                # Verify mock payment
+                if user.payment_order_id.startswith("mock_order_") and user.payment_id.startswith("mock_pay_"):
+                    is_paid = True
+                else:
+                    raise HTTPException(status_code=400, detail="Invalid mock payment")
+            else:
+                # Verify real Razorpay payment
+                params_dict = {
+                    'razorpay_order_id': user.payment_order_id,
+                    'razorpay_payment_id': user.payment_id,
+                    'razorpay_signature': user.payment_signature
+                }
+                razorpay_client.utility.verify_payment_signature(params_dict)
+                is_paid = True
+        except Exception as e:
             raise HTTPException(status_code=400, detail="Payment verification failed")
     
     user_id = f"user_{datetime.now(timezone.utc).timestamp()}"

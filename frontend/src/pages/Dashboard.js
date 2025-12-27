@@ -52,6 +52,16 @@ const Dashboard = ({ user, setUser }) => {
     }
   };
 
+  const handleStatusChange = async (taskId, newStatus) => {
+    try {
+      await axios.put(`${API}/tasks/${taskId}`, { status: newStatus });
+      toast.success("Task status updated");
+      fetchDashboardData(); // Refresh data
+    } catch (error) {
+      toast.error("Failed to update task status");
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">

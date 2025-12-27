@@ -376,14 +376,44 @@ const TaskFormPage = ({ user, setUser }) => {
 
             <div>
               <Label htmlFor="scheduled_time">SCHEDULED TIME</Label>
-              <Input
-                id="scheduled_time"
-                type="time"
-                value={formData.scheduled_time}
-                onChange={(e) => setFormData({ ...formData, scheduled_time: e.target.value })}
-                data-testid="task-time-input"
-                className="mt-2"
-              />
+              <Select 
+                value={formData.scheduled_time} 
+                onValueChange={(value) => setFormData({ ...formData, scheduled_time: value })}
+              >
+                <SelectTrigger className="mt-2" data-testid="task-time-select">
+                  <SelectValue placeholder="Select time slot" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  <SelectItem value="08:00">08:00 AM</SelectItem>
+                  <SelectItem value="08:30">08:30 AM</SelectItem>
+                  <SelectItem value="09:00">09:00 AM</SelectItem>
+                  <SelectItem value="09:30">09:30 AM</SelectItem>
+                  <SelectItem value="10:00">10:00 AM</SelectItem>
+                  <SelectItem value="10:30">10:30 AM</SelectItem>
+                  <SelectItem value="11:00">11:00 AM</SelectItem>
+                  <SelectItem value="11:30">11:30 AM</SelectItem>
+                  <SelectItem value="12:00">12:00 PM</SelectItem>
+                  <SelectItem value="12:30">12:30 PM</SelectItem>
+                  <SelectItem value="13:00">01:00 PM</SelectItem>
+                  <SelectItem value="13:30">01:30 PM</SelectItem>
+                  <SelectItem value="14:00">02:00 PM</SelectItem>
+                  <SelectItem value="14:30">02:30 PM</SelectItem>
+                  <SelectItem value="15:00">03:00 PM</SelectItem>
+                  <SelectItem value="15:30">03:30 PM</SelectItem>
+                  <SelectItem value="16:00">04:00 PM</SelectItem>
+                  <SelectItem value="16:30">04:30 PM</SelectItem>
+                  <SelectItem value="17:00">05:00 PM</SelectItem>
+                  <SelectItem value="17:30">05:30 PM</SelectItem>
+                  <SelectItem value="18:00">06:00 PM</SelectItem>
+                  <SelectItem value="18:30">06:30 PM</SelectItem>
+                  <SelectItem value="19:00">07:00 PM</SelectItem>
+                  <SelectItem value="19:30">07:30 PM</SelectItem>
+                  <SelectItem value="20:00">08:00 PM</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                💡 Select from 30-minute time slots
+              </p>
             </div>
 
             <div className="md:col-span-2">

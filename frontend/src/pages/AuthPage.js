@@ -59,6 +59,39 @@ const AuthPage = ({ setUser }) => {
         amount: 49900
       });
 
+      // Check if it's mock payment
+      if (orderResponse.data.mock) {
+        // Simulate mock payment flow
+        const mockPaymentId = `mock_pay_${Date.now()}`;
+        const mockSignature = `mock_sig_${Date.now()}`;
+
+        try {
+          await axios.post(`${API}/payment/verify`, {
+            order_id: orderResponse.data.order_id,
+            payment_id: mockPaymentId,
+            signature: mockSignature
+          });
+
+          const registerResponse = await axios.post(`${API}/auth/register`, {
+            ...registerData,
+            payment_order_id: orderResponse.data.order_id,
+            payment_id: mockPaymentId,
+            payment_signature: mockSignature
+          });
+
+          setAuthToken(registerResponse.data.access_token);
+          setUser(registerResponse.data.user);
+          toast.success("Registration successful! (Mock payment used for testing)");
+          navigate("/dashboard");
+        } catch (error) {
+          toast.error("Payment verification failed");
+        } finally {
+          setPaymentProcessing(false);
+        }
+        return;
+      }
+
+      // Real Razorpay payment flow
       const options = {
         key: "rzp_test_yourkeyhere",
         amount: orderResponse.data.amount,

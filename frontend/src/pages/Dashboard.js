@@ -45,6 +45,17 @@ const Dashboard = ({ user, setUser }) => {
       ]);
       setStats(statsResponse.data);
       setRecentTasks(tasksResponse.data.slice(0, 5));
+      
+      // Find super important tasks (critical priority and not completed)
+      const superImportantTasks = tasksResponse.data.filter(
+        task => task.priority === "super_important" && task.status !== "completed"
+      );
+      setCriticalTasks(superImportantTasks);
+      
+      // Show alert if there are critical tasks
+      if (superImportantTasks.length > 0) {
+        setShowCriticalAlert(true);
+      }
     } catch (error) {
       toast.error("Failed to fetch dashboard data");
     } finally {

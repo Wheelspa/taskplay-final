@@ -442,12 +442,35 @@ const TaskFormPage = ({ user, setUser }) => {
 
             <div className="md:col-span-2">
               <Label>LOCATION ON MAP</Label>
-              <p className="text-sm text-muted-foreground mb-2">Click on the map to select location</p>
+              <p className="text-sm text-muted-foreground mb-3">Search for a location or click on the map to select</p>
+              
+              {/* Location Search Bar */}
+              <div className="flex gap-2 mb-3">
+                <Input
+                  type="text"
+                  placeholder="Search location (e.g., Times Square, New York or Mumbai, India)"
+                  value={locationSearch}
+                  onChange={(e) => setLocationSearch(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && searchLocation()}
+                  data-testid="location-search-input"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  onClick={searchLocation}
+                  disabled={searchingLocation}
+                  data-testid="search-location-btn"
+                >
+                  {searchingLocation ? "SEARCHING..." : "SEARCH"}
+                </Button>
+              </div>
+
               <div className="border border-border rounded-sm overflow-hidden" data-testid="task-map">
                 <MapContainer
                   center={mapPosition}
                   zoom={13}
                   style={{ height: "400px", width: "100%" }}
+                  key={`${mapPosition[0]}-${mapPosition[1]}`}
                 >
                   <TileLayer
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

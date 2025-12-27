@@ -297,11 +297,15 @@ const TaskFormPage = ({ user, setUser }) => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="super_important">🔥 Super Important</SelectItem>
                   <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="low">Low</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                💡 Super Important tasks will trigger an alert popup on dashboard
+              </p>
             </div>
 
             <div>

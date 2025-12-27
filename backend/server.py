@@ -26,8 +26,9 @@ security = HTTPBearer()
 JWT_SECRET = os.environ.get('JWT_SECRET', 'your-secret-key-change-in-production')
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30 * 24 * 60
+USE_MOCK_PAYMENT = os.environ.get('USE_MOCK_PAYMENT', 'false').lower() == 'true'
 
-razorpay_client = razorpay.Client(auth=(os.environ.get('RAZORPAY_KEY_ID', ''), os.environ.get('RAZORPAY_KEY_SECRET', '')))
+razorpay_client = razorpay.Client(auth=(os.environ.get('RAZORPAY_KEY_ID', ''), os.environ.get('RAZORPAY_KEY_SECRET', ''))) if not USE_MOCK_PAYMENT else None
 
 app = FastAPI()
 api_router = APIRouter(prefix="/api")

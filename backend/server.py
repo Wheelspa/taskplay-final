@@ -301,12 +301,12 @@ async def get_tasks(
 
 @api_router.get("/tasks/{task_id}", response_model=TaskResponse)
 async def get_task(task_id: str, current_user: dict = Depends(get_current_user)):
-    task = await db.tasks.find_one({"_id": task_id, "created_by": current_user["id"]}, {"_id": 0})
+    task = await db.tasks.find_one({"_id": task_id, "created_by": current_user["id"]})
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     
     return TaskResponse(
-        id=task["id"],
+        id=task["_id"],
         title=task["title"],
         description=task.get("description"),
         assignee_name=task.get("assignee_name"),

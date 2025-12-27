@@ -157,12 +157,16 @@ const Dashboard = ({ user, setUser }) => {
                 {recentTasks.map((task) => (
                   <div
                     key={task.id}
-                    className="border border-border bg-background p-6 rounded-sm hover:border-primary/50 transition-colors cursor-pointer"
-                    onClick={() => navigate(`/tasks/${task.id}`)}
+                    className="border border-border bg-background p-6 rounded-sm hover:border-primary/50 transition-colors"
                     data-testid={`task-item-${task.id}`}
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <h4 className="text-lg font-medium">{task.title}</h4>
+                      <h4 
+                        className="text-lg font-medium cursor-pointer hover:text-primary"
+                        onClick={() => navigate(`/tasks/${task.id}`)}
+                      >
+                        {task.title}
+                      </h4>
                       <span className={`text-xs uppercase tracking-wider font-medium ${getPriorityColor(task.priority)}`}>
                         {task.priority}
                       </span>
@@ -170,17 +174,38 @@ const Dashboard = ({ user, setUser }) => {
                     {task.description && (
                       <p className="text-sm text-muted-foreground mb-3">{task.description}</p>
                     )}
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      {task.scheduled_date && (
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {task.scheduled_date}
-                        </span>
-                      )}
-                      {task.assignee_name && (
-                        <span>Assigned to: {task.assignee_name}</span>
-                      )}
-                      <span className="ml-auto uppercase">{task.status}</span>
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        {task.scheduled_date && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {task.scheduled_date}
+                          </span>
+                        )}
+                        {task.assignee_name && (
+                          <span>Assigned to: {task.assignee_name}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground uppercase tracking-wide">STATUS:</span>
+                        <Select 
+                          value={task.status} 
+                          onValueChange={(value) => handleStatusChange(task.id, value)}
+                        >
+                          <SelectTrigger 
+                            className="w-36 h-8 text-xs uppercase"
+                            data-testid={`status-select-${task.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="in_progress">In Progress</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
                 ))}

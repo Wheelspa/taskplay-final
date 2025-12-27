@@ -263,61 +263,80 @@ const Dashboard = ({ user, setUser }) => {
               </div>
             ) : (
               <div className="space-y-4">
-                {recentTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="border border-border bg-background p-6 rounded-sm hover:border-primary/50 transition-colors"
-                    data-testid={`task-item-${task.id}`}
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 
-                        className="text-lg font-medium cursor-pointer hover:text-primary"
-                        onClick={() => navigate(`/tasks/${task.id}`)}
-                      >
-                        {task.title}
-                      </h4>
-                      <span className={`text-xs uppercase tracking-wider font-medium ${getPriorityColor(task.priority)}`}>
-                        {task.priority}
-                      </span>
-                    </div>
-                    {task.description && (
-                      <p className="text-sm text-muted-foreground mb-3">{task.description}</p>
-                    )}
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        {task.scheduled_date && (
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {task.scheduled_date}
-                          </span>
-                        )}
-                        {task.assignee_name && (
-                          <span>Assigned to: {task.assignee_name}</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground uppercase tracking-wide">STATUS:</span>
-                        <Select 
-                          value={task.status} 
-                          onValueChange={(value) => handleStatusChange(task.id, value)}
-                        >
-                          <SelectTrigger 
-                            className="w-36 h-8 text-xs uppercase"
-                            data-testid={`status-select-${task.id}`}
-                            onClick={(e) => e.stopPropagation()}
+                {recentTasks.map((task) => {
+                  const taskScore = getTaskScore(task.status);
+                  return (
+                    <div
+                      key={task.id}
+                      className="border border-border bg-background p-6 rounded-sm hover:border-primary/50 transition-colors"
+                      data-testid={`task-item-${task.id}`}
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <h4 
+                            className="text-lg font-medium cursor-pointer hover:text-primary"
+                            onClick={() => navigate(`/tasks/${task.id}`)}
                           >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="in_progress">In Progress</SelectItem>
-                            <SelectItem value="completed">Completed</SelectItem>
-                          </SelectContent>
-                        </Select>
+                            {task.title}
+                          </h4>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className={`text-xs uppercase tracking-wider font-medium ${getPriorityColor(task.priority)}`}>
+                            {task.priority}
+                          </span>
+                          <div className="flex items-center gap-2 px-3 py-1 rounded-sm border border-border bg-secondary">
+                            <div className="flex items-center gap-1">
+                              <span className={`text-sm font-bold ${taskScore.color}`}>{taskScore.score}</span>
+                              <span className="text-xs text-muted-foreground">/10</span>
+                            </div>
+                            <div className="w-16 bg-muted rounded-full h-1.5">
+                              <div 
+                                className={`${taskScore.bgColor} h-1.5 rounded-full transition-all`}
+                                style={{ width: `${taskScore.score * 10}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      {task.description && (
+                        <p className="text-sm text-muted-foreground mb-3">{task.description}</p>
+                      )}
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          {task.scheduled_date && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {task.scheduled_date}
+                            </span>
+                          )}
+                          {task.assignee_name && (
+                            <span>Assigned to: {task.assignee_name}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-muted-foreground uppercase tracking-wide">STATUS:</span>
+                          <Select 
+                            value={task.status} 
+                            onValueChange={(value) => handleStatusChange(task.id, value)}
+                          >
+                            <SelectTrigger 
+                              className="w-36 h-8 text-xs uppercase"
+                              data-testid={`status-select-${task.id}`}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="in_progress">In Progress</SelectItem>
+                              <SelectItem value="completed">Completed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

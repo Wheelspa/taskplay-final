@@ -15,7 +15,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ListTodo, Calendar, Clock, CheckCircle2, AlertCircle, LogOut, Plus, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ListTodo, Calendar, Clock, CheckCircle2, AlertCircle, LogOut, Plus, Trash2, Bell, X } from "lucide-react";
 import { toast } from "sonner";
 
 const Dashboard = ({ user, setUser }) => {

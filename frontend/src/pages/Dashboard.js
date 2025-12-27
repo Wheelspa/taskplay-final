@@ -62,6 +62,25 @@ const Dashboard = ({ user, setUser }) => {
     }
   };
 
+  const handleClearCompleted = async () => {
+    const completedTasks = recentTasks.filter(task => task.status === "completed");
+    if (completedTasks.length === 0) {
+      toast.info("No completed tasks to clear");
+      return;
+    }
+
+    try {
+      // Delete all completed tasks
+      await Promise.all(
+        completedTasks.map(task => axios.delete(`${API}/tasks/${task.id}`))
+      );
+      toast.success(`Cleared ${completedTasks.length} completed task(s)`);
+      fetchDashboardData(); // Refresh data
+    } catch (error) {
+      toast.error("Failed to clear completed tasks");
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">

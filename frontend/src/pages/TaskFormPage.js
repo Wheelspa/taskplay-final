@@ -336,7 +336,18 @@ const TaskFormPage = ({ user, setUser }) => {
                 placeholder="Enter address or click on map"
                 data-testid="task-location-input"
                 className="mt-2"
+                list="location-suggestions"
               />
+              <datalist id="location-suggestions">
+                {suggestions.locations.map((location, idx) => (
+                  <option key={idx} value={location} />
+                ))}
+              </datalist>
+              {suggestions.locations.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  💡 {suggestions.locations.length} location(s) from previous tasks
+                </p>
+              )}
             </div>
 
             <div className="md:col-span-2">

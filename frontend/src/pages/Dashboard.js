@@ -224,6 +224,18 @@ const Dashboard = ({ user, setUser }) => {
         <div className="max-w-7xl mx-auto px-6 md:px-12 py-6 flex justify-between items-center">
           <h1 className="text-2xl font-bold tracking-tight" data-testid="dashboard-logo">TASKPRO</h1>
           <div className="flex items-center gap-4">
+            {criticalTasks.length > 0 && (
+              <Button
+                variant="outline"
+                className="border-red-600 text-red-600 hover:bg-red-50 relative"
+                onClick={() => setShowCriticalAlert(true)}
+                data-testid="show-critical-tasks-btn"
+              >
+                <Bell className="w-4 h-4 mr-2 animate-pulse" />
+                {criticalTasks.length} CRITICAL
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-600 rounded-full animate-ping"></span>
+              </Button>
+            )}
             <span className="text-sm text-muted-foreground" data-testid="user-name">Welcome, {user?.name}</span>
             <Button
               variant="outline"

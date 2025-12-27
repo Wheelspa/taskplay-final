@@ -4,7 +4,18 @@ import axios from "axios";
 import { API, removeAuthToken } from "../App";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ListTodo, Calendar, Clock, CheckCircle2, AlertCircle, LogOut, Plus } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { ListTodo, Calendar, Clock, CheckCircle2, AlertCircle, LogOut, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 const Dashboard = ({ user, setUser }) => {

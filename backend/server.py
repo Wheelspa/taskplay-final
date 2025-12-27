@@ -276,11 +276,11 @@ async def get_tasks(
     if priority:
         query["priority"] = priority
     
-    tasks = await db.tasks.find(query, {"_id": 0}).to_list(1000)
+    tasks = await db.tasks.find(query).to_list(1000)
     
     return [
         TaskResponse(
-            id=task["id"],
+            id=task["_id"],
             title=task["title"],
             description=task.get("description"),
             assignee_name=task.get("assignee_name"),

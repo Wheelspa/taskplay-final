@@ -106,6 +106,44 @@ const TaskFormPage = ({ user, setUser }) => {
     }
   };
 
+  const searchLocation = async () => {
+    if (!locationSearch.trim()) {
+      toast.error("Please enter a location to search");
+      return;
+    }
+
+    setSearchingLocation(true);
+    try {
+      // Using Nominatim (OpenStreetMap) geocoding API
+      const response = await axios.get(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationSearch)}&limit=1`
+      );
+
+      if (response.data && response.data.length > 0) {
+        const result = response.data[0];
+        const lat = parseFloat(result.lat);
+        const lng = parseFloat(result.lon);
+        
+        setMapPosition([lat, lng]);
+        setFormData({
+          ...formData,
+          location_address: result.display_name,
+          location_lat: lat,
+          location_lng: lng
+        });
+        
+        toast.success("Location found!");
+      } else {
+        toast.error("Location not found. Try a different search.");
+      }
+    } catch (error) {
+      toast.error("Failed to search location");
+      console.error("Location search error:", error);
+    } finally {
+      setSearchingLocation(false);
+    }
+  };
+
   const fetchTask = async () => {
     try {
       const response = await axios.get(`${API}/tasks/${taskId}`);

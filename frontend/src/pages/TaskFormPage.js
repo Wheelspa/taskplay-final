@@ -38,6 +38,12 @@ const TaskFormPage = ({ user, setUser }) => {
   const [loading, setLoading] = useState(false);
   const [fetchingTask, setFetchingTask] = useState(isEdit);
   const [mapPosition, setMapPosition] = useState([28.6139, 77.2090]);
+  const [suggestions, setSuggestions] = useState({
+    titles: [],
+    assigneeNames: [],
+    assigneePhones: [],
+    locations: []
+  });
   
   const [formData, setFormData] = useState({
     title: "",

@@ -262,6 +262,9 @@ const AuthPage = ({ setUser }) => {
                 <p className="text-sm text-accent-foreground">
                   Registration fee: <strong>₹499</strong> (One-time payment)
                 </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  💡 Testing mode: Mock payment will be used (no real charges)
+                </p>
               </div>
               <Button
                 type="submit"

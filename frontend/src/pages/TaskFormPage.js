@@ -77,8 +77,24 @@ const TaskFormPage = ({ user, setUser }) => {
       const uniquePhones = [...new Set(tasks.map(t => t.assignee_phone).filter(Boolean))];
       const uniqueLocations = [...new Set(tasks.map(t => t.location_address).filter(Boolean))];
       
+      // Add common templates if no previous tasks exist
+      const commonTitles = [
+        "Complete project report",
+        "Review documents",
+        "Client meeting",
+        "Follow up call",
+        "Site visit",
+        "Team briefing",
+        "Prepare presentation",
+        "Update database",
+        "Send quotation",
+        "Contract signing"
+      ];
+      
+      const finalTitles = uniqueTitles.length > 0 ? uniqueTitles : commonTitles;
+      
       setSuggestions({
-        titles: uniqueTitles,
+        titles: finalTitles,
         assigneeNames: uniqueNames,
         assigneePhones: uniquePhones,
         locations: uniqueLocations

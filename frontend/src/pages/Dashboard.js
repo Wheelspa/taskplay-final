@@ -63,6 +63,28 @@ const Dashboard = ({ user, setUser }) => {
     }
   };
 
+  const getTaskScore = (status) => {
+    switch (status) {
+      case "completed":
+        return { score: 10, color: "text-green-600", bgColor: "bg-green-600" };
+      case "in_progress":
+        return { score: 5, color: "text-blue-600", bgColor: "bg-blue-600" };
+      case "pending":
+        return { score: 0, color: "text-orange-600", bgColor: "bg-orange-600" };
+      default:
+        return { score: 0, color: "text-muted-foreground", bgColor: "bg-muted" };
+    }
+  };
+
+  const calculateOverallProgress = () => {
+    if (!recentTasks || recentTasks.length === 0) return 0;
+    const totalScore = recentTasks.reduce((sum, task) => {
+      return sum + getTaskScore(task.status).score;
+    }, 0);
+    const maxPossibleScore = recentTasks.length * 10;
+    return Math.round((totalScore / maxPossibleScore) * 100);
+  };
+
   const handleStatusChange = async (taskId, newStatus) => {
     try {
       await axios.put(`${API}/tasks/${taskId}`, { status: newStatus });

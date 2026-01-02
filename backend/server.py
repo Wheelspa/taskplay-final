@@ -84,6 +84,8 @@ class TaskUpdate(BaseModel):
     location_lng: Optional[float] = None
     location_address: Optional[str] = None
     status: Optional[str] = None
+    completed_at: Optional[str] = None
+    points_earned: Optional[int] = None
 
 class TaskResponse(BaseModel):
     id: str

@@ -120,6 +120,16 @@ def hash_password(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
+def calculate_task_points(priority: str) -> int:
+    """Calculate points earned for completing a task based on priority"""
+    points_map = {
+        "super_important": 5,
+        "high": 4,
+        "medium": 3,
+        "low": 2
+    }
+    return points_map.get(priority, 1)
+
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)

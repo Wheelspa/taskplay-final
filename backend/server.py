@@ -431,6 +431,41 @@ async def get_task_stats(current_user: dict = Depends(get_current_user)):
         "high_priority": high_priority
     }
 
+@api_router.get("/tasks/stats/scores")
+async def get_score_stats(current_user: dict = Depends(get_current_user)):
+    all_tasks = await db.tasks.find({"created_by": current_user["id"]}, {"_id": 0}).to_list(1000)
+    
+    # Get today's date
+    today = datetime.now(timezone.utc).date()
+    today_start = datetime.combine(today, datetime.min.time()).replace(tzinfo=timezone.utc).isoformat()
+    
+    # Get current month start
+    month_start = datetime(today.year, today.month, 1).replace(tzinfo=timezone.utc).isoformat()
+    
+    # Calculate scores
+    completed_tasks = [t for t in all_tasks if t.get("completed_at")]
+    
+    daily_score = sum(
+        t.get("points_earned", 0) 
+        for t in completed_tasks 
+        if t.get("completed_at", "") >= today_start
+    )
+    
+    monthly_score = sum(
+        t.get("points_earned", 0) 
+        for t in completed_tasks 
+        if t.get("completed_at", "") >= month_start
+    )
+    
+    total_score = sum(t.get("points_earned", 0) for t in completed_tasks)
+    
+    return {
+        "daily_score": daily_score,
+        "monthly_score": monthly_score,
+        "total_score": total_score,
+        "completed_tasks_count": len(completed_tasks)
+    }
+
 app.include_router(api_router)
 
 app.add_middleware(

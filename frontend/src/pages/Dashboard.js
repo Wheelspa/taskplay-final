@@ -112,14 +112,18 @@ const Dashboard = ({ user, setUser }) => {
 
   const handleStatusChange = async (taskId, newStatus) => {
     try {
-      await axios.put(`${API}/tasks/${taskId}`, { status: newStatus });
+      const response = await axios.put(`${API}/tasks/${taskId}`, { status: newStatus });
       
       // Auto-delete when marked as completed
       if (newStatus === "completed") {
+        const pointsEarned = response.data.points_earned || 0;
+        toast.success(`Task completed! +${pointsEarned} points earned 🎉`, {
+          duration: 3000
+        });
+        
         setTimeout(async () => {
           try {
             await axios.delete(`${API}/tasks/${taskId}`);
-            toast.success("Task completed and archived");
             fetchDashboardData();
           } catch (error) {
             console.error("Failed to auto-delete completed task:", error);

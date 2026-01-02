@@ -33,6 +33,9 @@ const Dashboard = ({ user, setUser }) => {
   const [showCriticalAlert, setShowCriticalAlert] = useState(false);
   const [criticalTasks, setCriticalTasks] = useState([]);
   const [scores, setScores] = useState(null);
+  const [showAchievement, setShowAchievement] = useState(false);
+  const [newAchievement, setNewAchievement] = useState(null);
+  const [previousScore, setPreviousScore] = useState(0);
 
   useEffect(() => {
     fetchDashboardData();

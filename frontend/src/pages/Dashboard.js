@@ -194,6 +194,55 @@ const Dashboard = ({ user, setUser }) => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Achievement Celebration Modal */}
+      <Dialog open={showAchievement} onOpenChange={setShowAchievement}>
+        <DialogContent className="max-w-md border-4 border-primary bg-gradient-to-br from-primary/10 to-accent/10">
+          <DialogHeader>
+            <DialogTitle className="text-center text-3xl font-bold flex flex-col items-center gap-4">
+              <div className="relative">
+                <Sparkles className="w-16 h-16 text-accent animate-pulse" />
+                <span className="absolute inset-0 flex items-center justify-center text-5xl">
+                  {newAchievement?.icon}
+                </span>
+              </div>
+              <div>
+                ACHIEVEMENT UNLOCKED!
+              </div>
+            </DialogTitle>
+            <DialogDescription className="text-center py-6">
+              <div className="text-6xl mb-4">{newAchievement?.icon}</div>
+              <h3 className="text-2xl font-bold text-foreground mb-2">
+                {newAchievement?.name}
+              </h3>
+              <p className="text-base text-muted-foreground mb-4">
+                {newAchievement?.description}
+              </p>
+              <div className="bg-primary/20 border-2 border-primary p-4 rounded-sm">
+                <p className="text-lg font-bold text-primary">
+                  {scores?.monthly_score} POINTS THIS MONTH
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {scores?.next_milestone > scores?.monthly_score 
+                    ? `${scores.next_milestone - scores.monthly_score} more to next milestone`
+                    : "You've reached the highest milestone!"}
+                </p>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center">
+            <Button
+              onClick={() => setShowAchievement(false)}
+              size="lg"
+              className="uppercase tracking-wider"
+              data-testid="close-achievement-btn"
+            >
+              <Trophy className="w-4 h-4 mr-2" />
+              AWESOME!
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Critical Tasks Alert Dialog */}
       <Dialog open={showCriticalAlert} onOpenChange={setShowCriticalAlert}>
         <DialogContent className="max-w-2xl border-red-600 border-2">

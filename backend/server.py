@@ -103,6 +103,8 @@ class TaskResponse(BaseModel):
     created_by: str
     created_at: str
     updated_at: Optional[str] = None
+    completed_at: Optional[str] = None
+    points_earned: Optional[int] = None
 
 class PaymentOrderCreate(BaseModel):
     amount: int

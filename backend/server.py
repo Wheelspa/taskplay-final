@@ -373,6 +373,12 @@ async def update_task(
     update_data = {k: v for k, v in task_update.model_dump().items() if v is not None}
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
     
+    # Award points when task is completed
+    if task_update.status == "completed" and existing_task.get("status") != "completed":
+        points = calculate_task_points(existing_task.get("priority", "medium"))
+        update_data["completed_at"] = datetime.now(timezone.utc).isoformat()
+        update_data["points_earned"] = points
+    
     await db.tasks.update_one(
         {"_id": task_id},
         {"$set": update_data}
@@ -395,7 +401,9 @@ async def update_task(
         status=updated_task["status"],
         created_by=updated_task["created_by"],
         created_at=updated_task["created_at"],
-        updated_at=updated_task.get("updated_at")
+        updated_at=updated_task.get("updated_at"),
+        completed_at=updated_task.get("completed_at"),
+        points_earned=updated_task.get("points_earned")
     )
 
 @api_router.delete("/tasks/{task_id}")

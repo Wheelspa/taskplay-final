@@ -32,6 +32,7 @@ const Dashboard = ({ user, setUser }) => {
   const [loading, setLoading] = useState(true);
   const [showCriticalAlert, setShowCriticalAlert] = useState(false);
   const [criticalTasks, setCriticalTasks] = useState([]);
+  const [scores, setScores] = useState(null);
 
   useEffect(() => {
     fetchDashboardData();

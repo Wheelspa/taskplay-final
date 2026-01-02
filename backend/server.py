@@ -509,6 +509,41 @@ async def get_score_stats(current_user: dict = Depends(get_current_user)):
     monthly_score = max(0, monthly_points - monthly_penalties)
     total_score = max(0, total_points - total_penalties)
     
+    # Determine achievements based on monthly score
+    achievements = []
+    if monthly_score >= 25:
+        achievements.append({
+            "level": "bronze",
+            "name": "Getting Started",
+            "description": "Earned 25+ points this month",
+            "icon": "🥉",
+            "unlocked": True
+        })
+    if monthly_score >= 50:
+        achievements.append({
+            "level": "silver",
+            "name": "Productive Worker",
+            "description": "Earned 50+ points this month",
+            "icon": "🥈",
+            "unlocked": True
+        })
+    if monthly_score >= 75:
+        achievements.append({
+            "level": "gold",
+            "name": "High Achiever",
+            "description": "Earned 75+ points this month",
+            "icon": "🥇",
+            "unlocked": True
+        })
+    if monthly_score >= 100:
+        achievements.append({
+            "level": "platinum",
+            "name": "Task Master",
+            "description": "Earned 100+ points this month",
+            "icon": "💎",
+            "unlocked": True
+        })
+    
     return {
         "daily_score": daily_score,
         "monthly_score": monthly_score,
@@ -516,7 +551,9 @@ async def get_score_stats(current_user: dict = Depends(get_current_user)):
         "completed_tasks_count": len(completed_tasks),
         "delayed_tasks_count": len(delayed_task_ids),
         "total_penalties": total_penalties,
-        "monthly_penalties": monthly_penalties
+        "monthly_penalties": monthly_penalties,
+        "achievements": achievements,
+        "next_milestone": 25 if monthly_score < 25 else 50 if monthly_score < 50 else 75 if monthly_score < 75 else 100 if monthly_score < 100 else 100
     }
 
 app.include_router(api_router)

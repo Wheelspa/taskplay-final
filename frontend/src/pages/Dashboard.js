@@ -50,7 +50,31 @@ const Dashboard = ({ user, setUser }) => {
       ]);
       setStats(statsResponse.data);
       setRecentTasks(tasksResponse.data.slice(0, 5));
-      setScores(scoresResponse.data);
+      
+      const newScores = scoresResponse.data;
+      
+      // Check if a new milestone was reached
+      if (scores && scores.monthly_score < newScores.monthly_score) {
+        const milestones = [25, 50, 75, 100];
+        for (const milestone of milestones) {
+          if (scores.monthly_score < milestone && newScores.monthly_score >= milestone) {
+            const achievement = newScores.achievements.find(a => 
+              (milestone === 25 && a.level === "bronze") ||
+              (milestone === 50 && a.level === "silver") ||
+              (milestone === 75 && a.level === "gold") ||
+              (milestone === 100 && a.level === "platinum")
+            );
+            if (achievement) {
+              setNewAchievement(achievement);
+              setShowAchievement(true);
+            }
+            break;
+          }
+        }
+      }
+      
+      setScores(newScores);
+      setPreviousScore(newScores.monthly_score);
       
       // Find super important tasks (critical priority and not completed)
       const superImportantTasks = tasksResponse.data.filter(

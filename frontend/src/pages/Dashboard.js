@@ -40,12 +40,14 @@ const Dashboard = ({ user, setUser }) => {
 
   const fetchDashboardData = async () => {
     try {
-      const [statsResponse, tasksResponse] = await Promise.all([
+      const [statsResponse, tasksResponse, scoresResponse] = await Promise.all([
         axios.get(`${API}/tasks/stats/overview`),
-        axios.get(`${API}/tasks`)
+        axios.get(`${API}/tasks`),
+        axios.get(`${API}/tasks/stats/scores`)
       ]);
       setStats(statsResponse.data);
       setRecentTasks(tasksResponse.data.slice(0, 5));
+      setScores(scoresResponse.data);
       
       // Find super important tasks (critical priority and not completed)
       const superImportantTasks = tasksResponse.data.filter(

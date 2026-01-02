@@ -309,6 +309,48 @@ const Dashboard = ({ user, setUser }) => {
           </div>
         </div>
 
+        {/* Score Tracking Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <div className="border-2 border-primary bg-primary/5 p-6 rounded-sm" data-testid="daily-score-card">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm uppercase tracking-wide text-muted-foreground font-medium">TODAY'S SCORE</h3>
+              <Target className="w-5 h-5 text-primary" />
+            </div>
+            <div className="text-5xl font-bold text-primary mb-2">{scores?.daily_score || 0}</div>
+            <p className="text-sm text-muted-foreground">Points earned today</p>
+            <div className="mt-4 flex items-center gap-2 text-xs text-primary">
+              <Trophy className="w-4 h-4" />
+              <span>Keep going! Complete more tasks</span>
+            </div>
+          </div>
+
+          <div className="border-2 border-green-600 bg-green-50 p-6 rounded-sm" data-testid="monthly-score-card">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm uppercase tracking-wide text-muted-foreground font-medium">THIS MONTH</h3>
+              <TrendingUp className="w-5 h-5 text-green-600" />
+            </div>
+            <div className="text-5xl font-bold text-green-600 mb-2">{scores?.monthly_score || 0}</div>
+            <p className="text-sm text-muted-foreground">Points this month</p>
+            <div className="mt-4 flex items-center gap-2 text-xs text-green-600">
+              <Calendar className="w-4 h-4" />
+              <span>{new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+            </div>
+          </div>
+
+          <div className="border-2 border-accent bg-accent/5 p-6 rounded-sm" data-testid="total-score-card">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm uppercase tracking-wide text-muted-foreground font-medium">ALL TIME</h3>
+              <Trophy className="w-5 h-5 text-accent" />
+            </div>
+            <div className="text-5xl font-bold text-accent mb-2">{scores?.total_score || 0}</div>
+            <p className="text-sm text-muted-foreground">Total points earned</p>
+            <div className="mt-4 flex items-center gap-2 text-xs text-accent">
+              <CheckCircle2 className="w-4 h-4" />
+              <span>{scores?.completed_tasks_count || 0} tasks completed</span>
+            </div>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="flex justify-between items-center mb-6">

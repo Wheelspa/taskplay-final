@@ -335,7 +335,12 @@ const Dashboard = ({ user, setUser }) => {
             </div>
             <div className="text-5xl font-bold text-green-600 mb-2">{scores?.monthly_score || 0}</div>
             <p className="text-sm text-muted-foreground">Points this month</p>
-            <div className="mt-4 flex items-center gap-2 text-xs text-green-600">
+            {scores?.monthly_penalties > 0 && (
+              <div className="mt-2 text-xs text-red-600 bg-red-100 px-2 py-1 rounded">
+                -{scores.monthly_penalties} penalty points
+              </div>
+            )}
+            <div className="mt-2 flex items-center gap-2 text-xs text-green-600">
               <Calendar className="w-4 h-4" />
               <span>{new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
             </div>
@@ -348,12 +353,35 @@ const Dashboard = ({ user, setUser }) => {
             </div>
             <div className="text-5xl font-bold text-accent mb-2">{scores?.total_score || 0}</div>
             <p className="text-sm text-muted-foreground">Total points earned</p>
-            <div className="mt-4 flex items-center gap-2 text-xs text-accent">
+            {scores?.total_penalties > 0 && (
+              <div className="mt-2 text-xs text-red-600 bg-red-100 px-2 py-1 rounded">
+                -{scores.total_penalties} total penalties
+              </div>
+            )}
+            <div className="mt-2 flex items-center gap-2 text-xs text-accent">
               <CheckCircle2 className="w-4 h-4" />
               <span>{scores?.completed_tasks_count || 0} tasks completed</span>
             </div>
           </div>
         </div>
+
+        {/* Delayed Tasks Warning */}
+        {scores?.delayed_tasks_count > 0 && (
+          <div className="bg-red-50 border-2 border-red-600 p-4 rounded-sm mb-8" data-testid="delayed-tasks-warning">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="w-6 h-6 text-red-600" />
+              <div>
+                <h3 className="font-medium text-red-900">
+                  ⚠️ {scores.delayed_tasks_count} Task(s) Delayed by 3+ Days
+                </h3>
+                <p className="text-sm text-red-800 mt-1">
+                  {scores.delayed_tasks_count} task(s) are overdue by more than 3 days. 
+                  5 points have been deducted for each delayed task. Complete them soon to avoid further penalties!
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">

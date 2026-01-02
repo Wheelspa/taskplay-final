@@ -442,6 +442,50 @@ async def get_score_stats(current_user: dict = Depends(get_current_user)):
     # Get current month start
     month_start = datetime(today.year, today.month, 1).replace(tzinfo=timezone.utc).isoformat()
     
+    # Check for delayed tasks and apply penalties
+    delayed_task_ids = []
+    total_penalties = 0
+    monthly_penalties = 0
+    
+    for task in all_tasks:
+        # Skip if already completed or no scheduled date
+        if task.get("status") == "completed" or not task.get("scheduled_date"):
+            continue
+        
+        # Skip if penalty already applied
+        if task.get("penalty_applied"):
+            # Still count the penalty in calculations
+            penalty = task.get("penalty_points", 0)
+            total_penalties += penalty
+            if task.get("penalty_applied_at", "") >= month_start:
+                monthly_penalties += penalty
+            continue
+        
+        # Check if task is delayed by more than 3 days
+        try:
+            scheduled_date = datetime.fromisoformat(task["scheduled_date"]).date()
+            days_delayed = (today - scheduled_date).days
+            
+            if days_delayed > 3:
+                # Apply penalty
+                penalty = 5
+                await db.tasks.update_one(
+                    {"id": task["id"]},
+                    {
+                        "$set": {
+                            "penalty_applied": True,
+                            "penalty_points": penalty,
+                            "penalty_applied_at": datetime.now(timezone.utc).isoformat(),
+                            "days_delayed": days_delayed
+                        }
+                    }
+                )
+                delayed_task_ids.append(task["id"])
+                total_penalties += penalty
+                monthly_penalties += penalty
+        except:
+            continue
+    
     # Calculate scores
     completed_tasks = [t for t in all_tasks if t.get("completed_at")]
     
@@ -451,19 +495,26 @@ async def get_score_stats(current_user: dict = Depends(get_current_user)):
         if t.get("completed_at", "") >= today_start
     )
     
-    monthly_score = sum(
+    monthly_points = sum(
         t.get("points_earned", 0) 
         for t in completed_tasks 
         if t.get("completed_at", "") >= month_start
     )
     
-    total_score = sum(t.get("points_earned", 0) for t in completed_tasks)
+    total_points = sum(t.get("points_earned", 0) for t in completed_tasks)
+    
+    # Apply penalties
+    monthly_score = max(0, monthly_points - monthly_penalties)
+    total_score = max(0, total_points - total_penalties)
     
     return {
         "daily_score": daily_score,
         "monthly_score": monthly_score,
         "total_score": total_score,
-        "completed_tasks_count": len(completed_tasks)
+        "completed_tasks_count": len(completed_tasks),
+        "delayed_tasks_count": len(delayed_task_ids),
+        "total_penalties": total_penalties,
+        "monthly_penalties": monthly_penalties
     }
 
 app.include_router(api_router)

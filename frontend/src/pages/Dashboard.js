@@ -459,6 +459,80 @@ const Dashboard = ({ user, setUser }) => {
           </div>
         )}
 
+        {/* Achievements Display */}
+        {scores?.achievements && scores.achievements.length > 0 && (
+          <div className="bg-gradient-to-r from-primary/10 to-accent/10 border-2 border-primary p-6 rounded-sm mb-8" data-testid="achievements-section">
+            <div className="flex items-center gap-3 mb-4">
+              <Award className="w-6 h-6 text-primary" />
+              <h3 className="text-xl font-bold">THIS MONTH'S ACHIEVEMENTS</h3>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Bronze - 25 points */}
+              <div className={`border-2 p-4 rounded-sm text-center transition-all ${
+                scores.achievements.some(a => a.level === "bronze")
+                  ? "border-amber-700 bg-amber-50"
+                  : "border-muted bg-muted/20 opacity-50"
+              }`} data-testid="achievement-bronze">
+                <div className="text-4xl mb-2">🥉</div>
+                <div className="text-xs font-bold uppercase tracking-wide">Getting Started</div>
+                <div className="text-xs text-muted-foreground mt-1">25 Points</div>
+                {scores.achievements.some(a => a.level === "bronze") && (
+                  <div className="text-xs text-green-600 font-medium mt-2">✓ UNLOCKED</div>
+                )}
+              </div>
+
+              {/* Silver - 50 points */}
+              <div className={`border-2 p-4 rounded-sm text-center transition-all ${
+                scores.achievements.some(a => a.level === "silver")
+                  ? "border-gray-400 bg-gray-50"
+                  : "border-muted bg-muted/20 opacity-50"
+              }`} data-testid="achievement-silver">
+                <div className="text-4xl mb-2">🥈</div>
+                <div className="text-xs font-bold uppercase tracking-wide">Productive Worker</div>
+                <div className="text-xs text-muted-foreground mt-1">50 Points</div>
+                {scores.achievements.some(a => a.level === "silver") && (
+                  <div className="text-xs text-green-600 font-medium mt-2">✓ UNLOCKED</div>
+                )}
+              </div>
+
+              {/* Gold - 75 points */}
+              <div className={`border-2 p-4 rounded-sm text-center transition-all ${
+                scores.achievements.some(a => a.level === "gold")
+                  ? "border-yellow-600 bg-yellow-50"
+                  : "border-muted bg-muted/20 opacity-50"
+              }`} data-testid="achievement-gold">
+                <div className="text-4xl mb-2">🥇</div>
+                <div className="text-xs font-bold uppercase tracking-wide">High Achiever</div>
+                <div className="text-xs text-muted-foreground mt-1">75 Points</div>
+                {scores.achievements.some(a => a.level === "gold") && (
+                  <div className="text-xs text-green-600 font-medium mt-2">✓ UNLOCKED</div>
+                )}
+              </div>
+
+              {/* Platinum - 100 points */}
+              <div className={`border-2 p-4 rounded-sm text-center transition-all ${
+                scores.achievements.some(a => a.level === "platinum")
+                  ? "border-blue-600 bg-blue-50"
+                  : "border-muted bg-muted/20 opacity-50"
+              }`} data-testid="achievement-platinum">
+                <div className="text-4xl mb-2">💎</div>
+                <div className="text-xs font-bold uppercase tracking-wide">Task Master</div>
+                <div className="text-xs text-muted-foreground mt-1">100 Points</div>
+                {scores.achievements.some(a => a.level === "platinum") && (
+                  <div className="text-xs text-green-600 font-medium mt-2">✓ UNLOCKED</div>
+                )}
+              </div>
+            </div>
+            <div className="mt-4 text-center text-sm text-muted-foreground">
+              {scores.monthly_score < 100 ? (
+                <>Keep completing tasks to unlock more achievements! Next: {scores.next_milestone} points</>
+              ) : (
+                <>🎉 Congratulations! You've unlocked all achievements this month!</>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="flex justify-between items-center mb-6">

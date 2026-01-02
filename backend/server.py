@@ -472,7 +472,7 @@ async def get_score_stats(current_user: dict = Depends(get_current_user)):
                 # Apply penalty
                 penalty = 5
                 await db.tasks.update_one(
-                    {"id": task["id"]},
+                    {"_id": task.get("id", task.get("_id"))},
                     {
                         "$set": {
                             "penalty_applied": True,
@@ -482,7 +482,7 @@ async def get_score_stats(current_user: dict = Depends(get_current_user)):
                         }
                     }
                 )
-                delayed_task_ids.append(task["id"])
+                delayed_task_ids.append(task.get("id", task.get("_id")))
                 total_penalties += penalty
                 monthly_penalties += penalty
         except:

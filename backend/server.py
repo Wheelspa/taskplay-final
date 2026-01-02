@@ -463,7 +463,9 @@ async def get_score_stats(current_user: dict = Depends(get_current_user)):
         
         # Check if task is delayed by more than 3 days
         try:
-            scheduled_date = datetime.fromisoformat(task["scheduled_date"]).date()
+            scheduled_date_str = task["scheduled_date"]
+            # Parse date string (format: YYYY-MM-DD)
+            scheduled_date = datetime.strptime(scheduled_date_str, "%Y-%m-%d").date()
             days_delayed = (today - scheduled_date).days
             
             if days_delayed > 3:

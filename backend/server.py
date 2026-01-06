@@ -452,7 +452,8 @@ async def delete_task(task_id: str, current_user: dict = Depends(get_current_use
         raise HTTPException(status_code=404, detail="Task not found")
     return {"message": "Task deleted successfully"}
 
-@api_router.get("/tasks/stats/overview")
+@api_router.get("/tasks/stats/scores")
+async def get_score_stats(current_user: dict = Depends(get_current_user)):
 async def get_task_stats(current_user: dict = Depends(get_current_user)):
     all_tasks = await db.tasks.find({"created_by": current_user["id"]}, {"_id": 0}).to_list(1000)
     

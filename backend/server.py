@@ -105,6 +105,45 @@ class TaskResponse(BaseModel):
     updated_at: Optional[str] = None
     completed_at: Optional[str] = None
     points_earned: Optional[int] = None
+    team_id: Optional[str] = None
+    assigned_to: Optional[List[str]] = None
+
+class TeamCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    logo_url: Optional[str] = None
+
+class TeamResponse(BaseModel):
+    id: str
+    name: str
+    description: Optional[str] = None
+    logo_url: Optional[str] = None
+    owner_id: str
+    created_at: str
+    member_count: int
+
+class TeamMemberAdd(BaseModel):
+    user_email: str
+    role: str = "member"
+
+class TeamMemberResponse(BaseModel):
+    user_id: str
+    user_name: str
+    user_email: str
+    role: str
+    joined_at: str
+
+class CommentCreate(BaseModel):
+    task_id: str
+    content: str
+
+class CommentResponse(BaseModel):
+    id: str
+    task_id: str
+    user_id: str
+    user_name: str
+    content: str
+    created_at: str
 
 class PaymentOrderCreate(BaseModel):
     amount: int

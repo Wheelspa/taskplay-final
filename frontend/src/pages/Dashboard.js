@@ -22,7 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ListTodo, Calendar, Clock, CheckCircle2, AlertCircle, LogOut, Plus, Trash2, Bell, X, Trophy, Target, TrendingUp, Award, Star, Sparkles } from "lucide-react";
+import { ListTodo, Calendar, Clock, CheckCircle2, AlertCircle, LogOut, Plus, Bell, X, Trophy, Target, TrendingUp, Award, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 const Dashboard = ({ user, setUser }) => {
@@ -162,25 +162,6 @@ const Dashboard = ({ user, setUser }) => {
       }
     } catch (error) {
       toast.error("Failed to update task status");
-    }
-  };
-
-  const handleClearCompleted = async () => {
-    const completedTasks = recentTasks.filter(task => task.status === "completed");
-    if (completedTasks.length === 0) {
-      toast.info("No completed tasks to clear");
-      return;
-    }
-
-    try {
-      // Delete all completed tasks
-      await Promise.all(
-        completedTasks.map(task => axios.delete(`${API}/tasks/${task.id}`))
-      );
-      toast.success(`Cleared ${completedTasks.length} completed task(s)`);
-      fetchDashboardData(); // Refresh data
-    } catch (error) {
-      toast.error("Failed to clear completed tasks");
     }
   };
 
@@ -553,36 +534,6 @@ const Dashboard = ({ user, setUser }) => {
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-2xl font-medium tracking-tight" data-testid="recent-tasks-heading">RECENT TASKS</h3>
               <div className="flex gap-2">
-                {stats?.completed > 0 && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        data-testid="clear-completed-btn"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        CLEAR COMPLETED
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Clear Completed Tasks</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently delete all {stats.completed} completed task(s). This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel data-testid="cancel-clear-btn">CANCEL</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleClearCompleted}
-                          data-testid="confirm-clear-btn"
-                        >
-                          DELETE COMPLETED TASKS
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
                 <Button
                   onClick={() => navigate("/tasks/new")}
                   data-testid="create-task-btn"

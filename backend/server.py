@@ -595,6 +595,58 @@ async def get_score_stats(current_user: dict = Depends(get_current_user)):
         "next_milestone": 25 if monthly_score < 25 else 50 if monthly_score < 50 else 75 if monthly_score < 75 else 100 if monthly_score < 100 else 100
     }
 
+@api_router.get("/tasks/suggestions")
+async def get_task_suggestions(current_user: dict = Depends(get_current_user)):
+    """Get autocomplete suggestions from user's previous tasks"""
+    tasks = await db.tasks.find({"created_by": current_user["id"]}).to_list(100)
+    
+    titles = list(set([t.get("title", "") for t in tasks if t.get("title")]))
+    assignee_names = list(set([t.get("assignee_name", "") for t in tasks if t.get("assignee_name")]))
+    assignee_phones = list(set([t.get("assignee_phone", "") for t in tasks if t.get("assignee_phone")]))
+    locations = list(set([t.get("location_address", "") for t in tasks if t.get("location_address")]))
+    
+    return {
+        "titles": titles[:20],
+        "assignee_names": assignee_names[:20],
+        "assignee_phones": assignee_phones[:20],
+        "locations": locations[:20]
+    }
+
+async def clear_monthly_tasks():
+    """Clear all tasks at the end of every month - runs on server startup and checks if month changed"""
+    try:
+        # Get or create cleanup tracking document
+        cleanup_doc = await db.system_config.find_one({"_id": "monthly_cleanup"})
+        
+        today = datetime.now(timezone.utc)
+        current_month_key = f"{today.year}-{today.month}"
+        
+        # If we're in a new month and haven't cleared yet
+        if not cleanup_doc or cleanup_doc.get("last_cleanup_month") != current_month_key:
+            # Only clear if we're on day 1 of the month OR if it's first startup and we missed the cleanup
+            if today.day == 1 or (cleanup_doc and cleanup_doc.get("last_cleanup_month", "") < current_month_key):
+                # Clear all tasks from ALL users
+                result = await db.tasks.delete_many({})
+                logger.info(f"Monthly cleanup: Deleted {result.deleted_count} tasks for month {current_month_key}")
+                
+                # Update cleanup tracking
+                await db.system_config.update_one(
+                    {"_id": "monthly_cleanup"},
+                    {
+                        "$set": {
+                            "last_cleanup_month": current_month_key,
+                            "last_cleanup_at": today.isoformat(),
+                            "tasks_deleted": result.deleted_count
+                        }
+                    },
+                    upsert=True
+                )
+        else:
+            logger.info(f"Monthly cleanup already done for {current_month_key}")
+            
+    except Exception as e:
+        logger.error(f"Error during monthly cleanup: {e}")
+
 app.include_router(api_router)
 
 app.add_middleware(

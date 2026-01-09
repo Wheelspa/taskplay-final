@@ -304,35 +304,50 @@ const Dashboard = ({ user, setUser }) => {
       </Dialog>
 
       <nav className="border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 py-6 flex justify-between items-center">
-          <h1 className="text-2xl font-bold tracking-tight" data-testid="dashboard-logo">TASKPRO</h1>
-          <div className="flex items-center gap-4">
-            {criticalTasks.length > 0 && (
+        <div className="max-w-7xl mx-auto px-6 md:px-12 py-6">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-bold tracking-tight" data-testid="dashboard-logo">TASKPRO</h1>
+            <div className="flex items-center gap-4">
+              {criticalTasks.length > 0 && (
+                <Button
+                  variant="outline"
+                  className="border-red-600 text-red-600 hover:bg-red-50 relative"
+                  onClick={() => setShowCriticalAlert(true)}
+                  data-testid="show-critical-tasks-btn"
+                >
+                  <Bell className="w-4 h-4 mr-2 animate-pulse" />
+                  {criticalTasks.length} CRITICAL
+                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-600 rounded-full animate-ping"></span>
+                </Button>
+              )}
+              <span className="text-sm text-muted-foreground" data-testid="user-name">Welcome, {user?.name}</span>
               <Button
                 variant="outline"
-                className="border-red-600 text-red-600 hover:bg-red-50 relative"
-                onClick={() => setShowCriticalAlert(true)}
-                data-testid="show-critical-tasks-btn"
+                onClick={() => navigate("/tasks")}
+                data-testid="view-all-tasks-btn"
               >
-                <Bell className="w-4 h-4 mr-2 animate-pulse" />
-                {criticalTasks.length} CRITICAL
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-600 rounded-full animate-ping"></span>
+                ALL TASKS
               </Button>
-            )}
-            <span className="text-sm text-muted-foreground" data-testid="user-name">Welcome, {user?.name}</span>
+              <Button
+                variant="ghost"
+                onClick={handleLogout}
+                data-testid="logout-btn"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+          
+          {/* Add Task Button Below Logo */}
+          <div>
             <Button
-              variant="outline"
-              onClick={() => navigate("/tasks")}
-              data-testid="view-all-tasks-btn"
+              onClick={() => navigate("/tasks/new")}
+              size="lg"
+              className="uppercase tracking-wider"
+              data-testid="quick-add-task-btn"
             >
-              ALL TASKS
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={handleLogout}
-              data-testid="logout-btn"
-            >
-              <LogOut className="w-4 h-4" />
+              <Plus className="w-5 h-5 mr-2" />
+              ADD NEW TASK
             </Button>
           </div>
         </div>

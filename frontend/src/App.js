@@ -5,6 +5,7 @@ import axios from "axios";
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 import Dashboard from "./pages/Dashboard";
+import CalendarView from "./pages/CalendarView";
 import TaskListPage from "./pages/TaskListPage";
 import TaskFormPage from "./pages/TaskFormPage";
 import TaskDetailPage from "./pages/TaskDetailPage";
@@ -78,6 +79,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard user={user} setUser={setUser} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/calendar"
+            element={
+              <ProtectedRoute>
+                <CalendarView user={user} setUser={setUser} />
               </ProtectedRoute>
             }
           />

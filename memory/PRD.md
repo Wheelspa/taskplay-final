@@ -11,15 +11,17 @@ Build a comprehensive task management application named "TaskPro" with:
 - Points-based scoring system with achievements
 - Penalty system for delayed tasks
 - Automatic monthly task clearing
+- Calendar view for task overview
 
 ## Tech Stack
 - **Backend:** FastAPI + MongoDB (motor)
 - **Frontend:** React + Tailwind CSS + Shadcn UI
 - **Maps:** Leaflet (react-leaflet)
+- **Calendar:** react-day-picker (via Shadcn Calendar)
 - **Auth:** JWT-based authentication
 
 ## Current Status
-**Last Updated:** January 9, 2026
+**Last Updated:** January 12, 2026
 
 ### Completed Features ✅
 1. **User Authentication**
@@ -59,8 +61,29 @@ Build a comprehensive task management application named "TaskPro" with:
    - All tasks cleared at start of each month
    - Runs on server startup on day 1
 
+7. **Calendar View** (NEW)
+   - Full month calendar with task indicators
+   - Color-coded dots for priorities (red=super important, orange=high, blue=pending, green=completed)
+   - Click any date to see tasks for that day
+   - Priority filter dropdown
+   - "TODAY" button for quick navigation
+   - Monthly overview stats panel
+   - Task summary for selected date
+
 ### Removed Features
 - Manual "Clear Completed Tasks" button (per user request - tasks now auto-clear)
+
+## Page Structure
+
+### Routes
+- `/` - Landing page
+- `/auth` - Login/Register
+- `/dashboard` - Main dashboard with stats and recent tasks
+- `/calendar` - Calendar view of all tasks
+- `/tasks` - Task list page
+- `/tasks/new` - Create new task
+- `/tasks/:id` - Task detail
+- `/tasks/:id/edit` - Edit task
 
 ## API Endpoints
 
@@ -148,8 +171,9 @@ Technical specs available in `/app/TEAM_COLLABORATION_SPECS.md`
 ## Known Limitations
 1. **Payment Gateway:** Currently mocked. Real Razorpay keys needed for production.
 2. **Notifications:** WhatsApp integration not yet implemented.
-3. **Backend Structure:** server.py is large (600+ lines), consider refactoring into modules.
+3. **Backend Structure:** server.py is large (650+ lines), consider refactoring into modules.
 
 ## Test Credentials
 - Create new user via registration UI
 - Mock payment auto-approves with any details
+- Test user: newtest@test.com / Test123!

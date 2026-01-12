@@ -293,6 +293,14 @@ const Dashboard = ({ user, setUser }) => {
               <span className="text-sm text-muted-foreground" data-testid="user-name">Welcome, {user?.name}</span>
               <Button
                 variant="outline"
+                onClick={() => navigate("/calendar")}
+                data-testid="calendar-view-btn"
+              >
+                <CalendarDays className="w-4 h-4 mr-2" />
+                CALENDAR
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => navigate("/tasks")}
                 data-testid="view-all-tasks-btn"
               >

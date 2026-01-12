@@ -301,6 +301,14 @@ const Dashboard = ({ user, setUser }) => {
               </Button>
               <Button
                 variant="outline"
+                onClick={() => navigate("/teams")}
+                data-testid="teams-view-btn"
+              >
+                <Users className="w-4 h-4 mr-2" />
+                TEAMS
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => navigate("/tasks")}
                 data-testid="view-all-tasks-btn"
               >

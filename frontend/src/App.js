@@ -6,6 +6,8 @@ import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 import Dashboard from "./pages/Dashboard";
 import CalendarView from "./pages/CalendarView";
+import TeamsPage from "./pages/TeamsPage";
+import TeamDetailPage from "./pages/TeamDetailPage";
 import TaskListPage from "./pages/TaskListPage";
 import TaskFormPage from "./pages/TaskFormPage";
 import TaskDetailPage from "./pages/TaskDetailPage";
@@ -87,6 +89,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <CalendarView user={user} setUser={setUser} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/teams"
+            element={
+              <ProtectedRoute>
+                <TeamsPage user={user} setUser={setUser} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/teams/:teamId"
+            element={
+              <ProtectedRoute>
+                <TeamDetailPage user={user} setUser={setUser} />
               </ProtectedRoute>
             }
           />

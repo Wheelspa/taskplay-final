@@ -95,7 +95,7 @@ const CalendarView = ({ user, setUser }) => {
 
   // Custom day content renderer
   const renderDay = (day) => {
-    const dateStr = day.toISOString().split("T")[0];
+    const dateStr = formatDateLocal(day);
     const dayTasks = tasksMap[dateStr] || [];
     const hasSuperImportant = dayTasks.some(
       (t) => t.priority === "super_important"

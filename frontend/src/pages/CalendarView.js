@@ -56,9 +56,17 @@ const CalendarView = ({ user, setUser }) => {
     toast.success("Logged out successfully");
   };
 
+  // Helper to format date as YYYY-MM-DD in local timezone
+  const formatDateLocal = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   // Get tasks for a specific date
   const getTasksForDate = (date) => {
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = formatDateLocal(date);
     return tasks.filter((task) => {
       if (filterPriority !== "all" && task.priority !== filterPriority) {
         return false;

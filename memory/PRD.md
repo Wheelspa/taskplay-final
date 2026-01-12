@@ -80,6 +80,8 @@ Build a comprehensive task management application named "TaskPro" with:
 - `/auth` - Login/Register
 - `/dashboard` - Main dashboard with stats and recent tasks
 - `/calendar` - Calendar view of all tasks
+- `/teams` - Team listing and creation
+- `/teams/:teamId` - Team detail with members and tasks
 - `/tasks` - Task list page
 - `/tasks/new` - Create new task
 - `/tasks/:id` - Task detail
@@ -101,6 +103,16 @@ Build a comprehensive task management application named "TaskPro" with:
 - `GET /api/tasks/stats/overview` - Task statistics
 - `GET /api/tasks/stats/scores` - Score and achievements
 - `GET /api/tasks/suggestions` - Autocomplete data
+
+### Teams
+- `GET /api/teams` - List user's teams
+- `POST /api/teams` - Create a team
+- `GET /api/teams/{id}` - Get team details
+- `DELETE /api/teams/{id}` - Delete team (owner only)
+- `GET /api/teams/{id}/members` - List team members
+- `POST /api/teams/{id}/members` - Add team member
+- `DELETE /api/teams/{id}/members/{userId}` - Remove member
+- `GET /api/teams/{id}/tasks` - Get team tasks
 
 ### Payments (Mocked)
 - `POST /api/payment/create-order` - Create payment order

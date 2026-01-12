@@ -612,6 +612,258 @@ async def get_task_suggestions(current_user: dict = Depends(get_current_user)):
         "locations": locations[:20]
     }
 
+# ==================== TEAM ENDPOINTS ====================
+
+@api_router.post("/teams", response_model=TeamResponse)
+async def create_team(team: TeamCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new team"""
+    team_id = f"team_{datetime.now(timezone.utc).timestamp()}"
+    team_doc = {
+        "_id": team_id,
+        "name": team.name,
+        "description": team.description,
+        "logo_url": team.logo_url,
+        "owner_id": current_user["id"],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "is_active": True
+    }
+    
+    await db.teams.insert_one(team_doc)
+    
+    # Add owner as first member
+    member_doc = {
+        "_id": f"tm_{datetime.now(timezone.utc).timestamp()}",
+        "team_id": team_id,
+        "user_id": current_user["id"],
+        "user_name": current_user["name"],
+        "user_email": current_user["email"],
+        "role": "owner",
+        "joined_at": datetime.now(timezone.utc).isoformat(),
+        "status": "active"
+    }
+    await db.team_members.insert_one(member_doc)
+    
+    return TeamResponse(
+        id=team_id,
+        name=team.name,
+        description=team.description,
+        logo_url=team.logo_url,
+        owner_id=current_user["id"],
+        created_at=team_doc["created_at"],
+        member_count=1
+    )
+
+@api_router.get("/teams", response_model=List[TeamResponse])
+async def get_teams(current_user: dict = Depends(get_current_user)):
+    """Get all teams the user is a member of"""
+    # Find all team memberships for user
+    memberships = await db.team_members.find({"user_id": current_user["id"], "status": "active"}).to_list(100)
+    team_ids = [m["team_id"] for m in memberships]
+    
+    if not team_ids:
+        return []
+    
+    teams = await db.teams.find({"_id": {"$in": team_ids}, "is_active": True}).to_list(100)
+    
+    result = []
+    for team in teams:
+        member_count = await db.team_members.count_documents({"team_id": team["_id"], "status": "active"})
+        result.append(TeamResponse(
+            id=team["_id"],
+            name=team["name"],
+            description=team.get("description"),
+            logo_url=team.get("logo_url"),
+            owner_id=team["owner_id"],
+            created_at=team["created_at"],
+            member_count=member_count
+        ))
+    
+    return result
+
+@api_router.get("/teams/{team_id}", response_model=TeamResponse)
+async def get_team(team_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a specific team"""
+    # Check if user is a member
+    membership = await db.team_members.find_one({
+        "team_id": team_id, 
+        "user_id": current_user["id"],
+        "status": "active"
+    })
+    if not membership:
+        raise HTTPException(status_code=403, detail="Not a member of this team")
+    
+    team = await db.teams.find_one({"_id": team_id, "is_active": True})
+    if not team:
+        raise HTTPException(status_code=404, detail="Team not found")
+    
+    member_count = await db.team_members.count_documents({"team_id": team_id, "status": "active"})
+    
+    return TeamResponse(
+        id=team["_id"],
+        name=team["name"],
+        description=team.get("description"),
+        logo_url=team.get("logo_url"),
+        owner_id=team["owner_id"],
+        created_at=team["created_at"],
+        member_count=member_count
+    )
+
+@api_router.get("/teams/{team_id}/members", response_model=List[TeamMemberResponse])
+async def get_team_members(team_id: str, current_user: dict = Depends(get_current_user)):
+    """Get all members of a team"""
+    # Check if user is a member
+    membership = await db.team_members.find_one({
+        "team_id": team_id, 
+        "user_id": current_user["id"],
+        "status": "active"
+    })
+    if not membership:
+        raise HTTPException(status_code=403, detail="Not a member of this team")
+    
+    members = await db.team_members.find({"team_id": team_id, "status": "active"}).to_list(100)
+    
+    return [
+        TeamMemberResponse(
+            user_id=m["user_id"],
+            user_name=m["user_name"],
+            user_email=m["user_email"],
+            role=m["role"],
+            joined_at=m["joined_at"]
+        )
+        for m in members
+    ]
+
+@api_router.post("/teams/{team_id}/members", response_model=TeamMemberResponse)
+async def add_team_member(team_id: str, member: TeamMemberAdd, current_user: dict = Depends(get_current_user)):
+    """Add a member to a team (owner/admin only)"""
+    # Check if user is owner or admin
+    membership = await db.team_members.find_one({
+        "team_id": team_id, 
+        "user_id": current_user["id"],
+        "status": "active",
+        "role": {"$in": ["owner", "admin"]}
+    })
+    if not membership:
+        raise HTTPException(status_code=403, detail="Only team owners and admins can add members")
+    
+    # Find user by email
+    user_to_add = await db.users.find_one({"email": member.user_email})
+    if not user_to_add:
+        raise HTTPException(status_code=404, detail="User not found with this email")
+    
+    # Check if already a member
+    existing = await db.team_members.find_one({
+        "team_id": team_id,
+        "user_id": user_to_add["_id"]
+    })
+    if existing:
+        raise HTTPException(status_code=400, detail="User is already a member of this team")
+    
+    member_doc = {
+        "_id": f"tm_{datetime.now(timezone.utc).timestamp()}",
+        "team_id": team_id,
+        "user_id": user_to_add["_id"],
+        "user_name": user_to_add["name"],
+        "user_email": user_to_add["email"],
+        "role": member.role,
+        "joined_at": datetime.now(timezone.utc).isoformat(),
+        "invited_by": current_user["id"],
+        "status": "active"
+    }
+    
+    await db.team_members.insert_one(member_doc)
+    
+    return TeamMemberResponse(
+        user_id=user_to_add["_id"],
+        user_name=user_to_add["name"],
+        user_email=user_to_add["email"],
+        role=member.role,
+        joined_at=member_doc["joined_at"]
+    )
+
+@api_router.delete("/teams/{team_id}/members/{user_id}")
+async def remove_team_member(team_id: str, user_id: str, current_user: dict = Depends(get_current_user)):
+    """Remove a member from a team"""
+    # Check if user is owner or admin (or removing themselves)
+    membership = await db.team_members.find_one({
+        "team_id": team_id, 
+        "user_id": current_user["id"],
+        "status": "active"
+    })
+    if not membership:
+        raise HTTPException(status_code=403, detail="Not a member of this team")
+    
+    if user_id != current_user["id"] and membership["role"] not in ["owner", "admin"]:
+        raise HTTPException(status_code=403, detail="Only owners and admins can remove other members")
+    
+    # Can't remove the owner
+    member_to_remove = await db.team_members.find_one({"team_id": team_id, "user_id": user_id})
+    if member_to_remove and member_to_remove["role"] == "owner":
+        raise HTTPException(status_code=400, detail="Cannot remove the team owner")
+    
+    result = await db.team_members.update_one(
+        {"team_id": team_id, "user_id": user_id},
+        {"$set": {"status": "inactive"}}
+    )
+    
+    if result.modified_count == 0:
+        raise HTTPException(status_code=404, detail="Member not found")
+    
+    return {"message": "Member removed successfully"}
+
+@api_router.get("/teams/{team_id}/tasks", response_model=List[TaskResponse])
+async def get_team_tasks(team_id: str, current_user: dict = Depends(get_current_user)):
+    """Get all tasks for a team"""
+    # Check if user is a member
+    membership = await db.team_members.find_one({
+        "team_id": team_id, 
+        "user_id": current_user["id"],
+        "status": "active"
+    })
+    if not membership:
+        raise HTTPException(status_code=403, detail="Not a member of this team")
+    
+    tasks = await db.tasks.find({"team_id": team_id}).to_list(1000)
+    
+    return [
+        TaskResponse(
+            id=task["_id"],
+            title=task["title"],
+            description=task.get("description"),
+            assignee_name=task.get("assignee_name"),
+            assignee_phone=task.get("assignee_phone"),
+            priority=task["priority"],
+            scheduled_date=task.get("scheduled_date"),
+            scheduled_time=task.get("scheduled_time"),
+            location_lat=task.get("location_lat"),
+            location_lng=task.get("location_lng"),
+            location_address=task.get("location_address"),
+            status=task["status"],
+            created_by=task["created_by"],
+            created_at=task["created_at"],
+            updated_at=task.get("updated_at"),
+            team_id=task.get("team_id"),
+            assigned_to=task.get("assigned_to")
+        )
+        for task in tasks
+    ]
+
+@api_router.delete("/teams/{team_id}")
+async def delete_team(team_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a team (owner only)"""
+    team = await db.teams.find_one({"_id": team_id})
+    if not team:
+        raise HTTPException(status_code=404, detail="Team not found")
+    
+    if team["owner_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Only the team owner can delete the team")
+    
+    # Soft delete
+    await db.teams.update_one({"_id": team_id}, {"$set": {"is_active": False}})
+    await db.team_members.update_many({"team_id": team_id}, {"$set": {"status": "inactive"}})
+    
+    return {"message": "Team deleted successfully"}
+
 async def clear_monthly_tasks():
     """Clear all tasks at the end of every month - runs on server startup and checks if month changed"""
     try:

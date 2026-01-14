@@ -32,11 +32,13 @@ Build a comprehensive task management application named "TaskPro" with:
    - Protected routes
 
 2. **Membership Plans**
-   - **Basic Monthly**: ₹90/month (50 tasks/month, Basic analytics, Email support, Calendar view)
+   - **Basic Monthly**: ₹90/month (50 tasks/month, Basic analytics, Email support)
    - **Basic Yearly**: ₹499/year (Save ₹581)
-   - **Premium Monthly**: ₹180/month (Unlimited tasks, Advanced analytics, Team collaboration, Priority support, Custom reports, API access)
+   - **Premium Monthly**: ₹180/month (Unlimited tasks, Advanced analytics, Team collaboration, Priority support, Custom reports, Calendar view, API access)
    - **Premium Yearly**: ₹999/year (Save ₹1,161)
    - Mock payment for testing (Razorpay integration ready)
+   - **Discount Code**: EARLYBIRD - 50% off (Expires Feb 28, 2025)
+   - Membership status displayed on dashboard with expiration date
 
 2. **Task Management**
    - Full CRUD operations

@@ -612,6 +612,7 @@ const AuthPage = ({ setUser }) => {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

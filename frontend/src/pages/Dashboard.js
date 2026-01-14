@@ -390,6 +390,90 @@ const Dashboard = ({ user, setUser }) => {
           </div>
         </div>
 
+        {/* Membership Status Card */}
+        <div className={`border-2 p-6 rounded-sm mb-8 ${
+          user?.membership_type === "premium" 
+            ? "border-purple-500 bg-gradient-to-r from-purple-50 to-purple-100" 
+            : user?.membership_type === "basic"
+            ? "border-blue-500 bg-gradient-to-r from-blue-50 to-blue-100"
+            : "border-gray-300 bg-gray-50"
+        }`} data-testid="membership-status-card">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className={`p-3 rounded-sm ${
+                user?.membership_type === "premium" 
+                  ? "bg-purple-200" 
+                  : user?.membership_type === "basic"
+                  ? "bg-blue-200"
+                  : "bg-gray-200"
+              }`}>
+                {user?.membership_type === "premium" ? (
+                  <Crown className="w-8 h-8 text-purple-600" />
+                ) : user?.membership_type === "basic" ? (
+                  <Zap className="w-8 h-8 text-blue-600" />
+                ) : (
+                  <CreditCard className="w-8 h-8 text-gray-600" />
+                )}
+              </div>
+              <div>
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  {user?.membership_type === "premium" ? "Premium Member" : 
+                   user?.membership_type === "basic" ? "Basic Member" : 
+                   "Free Account"}
+                  {user?.membership_type && (
+                    <span className={`text-xs px-2 py-1 rounded-full uppercase font-bold ${
+                      user?.membership_type === "premium" 
+                        ? "bg-purple-600 text-white" 
+                        : "bg-blue-600 text-white"
+                    }`}>
+                      {user?.membership_plan === "yearly" ? "Annual" : "Monthly"}
+                    </span>
+                  )}
+                </h3>
+                {user?.membership_type ? (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {user?.membership_type === "premium" 
+                      ? "Unlimited tasks • Advanced analytics • Team collaboration • Priority support" 
+                      : "Up to 50 tasks/month • Basic analytics • Email support"}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Upgrade to unlock premium features
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="text-right">
+              {user?.membership_expires_at ? (
+                <div>
+                  <div className="text-xs text-muted-foreground uppercase">Valid Until</div>
+                  <div className="text-lg font-bold">
+                    {new Date(user.membership_expires_at).toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric'
+                    })}
+                  </div>
+                  {new Date(user.membership_expires_at) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && (
+                    <div className="text-xs text-orange-600 font-medium mt-1">
+                      ⚠️ Expiring soon
+                    </div>
+                  )}
+                </div>
+              ) : !user?.membership_type && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => navigate("/auth?mode=register")}
+                  className="border-primary text-primary hover:bg-primary hover:text-white"
+                  data-testid="upgrade-btn"
+                >
+                  Upgrade Now
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Score Tracking Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           <div className="border-2 border-primary bg-primary/5 p-6 rounded-sm" data-testid="daily-score-card">

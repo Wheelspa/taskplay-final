@@ -29,29 +29,60 @@ const LandingPage = () => {
       </nav>
 
       <section className="py-24 px-6 md:px-12">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          <div>
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          {/* Brand Ambassador - Left Side */}
+          <div className="lg:col-span-4 flex justify-center lg:justify-start">
+            <div className="relative">
+              <div className="absolute -inset-4 bg-gradient-to-br from-primary/20 to-purple-500/20 rounded-full blur-2xl"></div>
+              <img
+                src="https://customer-assets.emergentagent.com/job_taskflow-pro-95/artifacts/mrfodckx_Gemini_Generated_Image_xk0v49xk0v49xk0v.png"
+                alt="TaskPro Brand Ambassador"
+                className="relative w-72 h-auto rounded-sm shadow-2xl"
+                data-testid="brand-ambassador-img"
+              />
+              <div className="absolute -bottom-4 -right-4 bg-primary text-primary-foreground px-4 py-2 rounded-sm shadow-lg">
+                <p className="text-xs font-bold uppercase tracking-wide">Trusted by 10,000+</p>
+                <p className="text-xs">Professionals</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Hero Content - Center/Right */}
+          <div className="lg:col-span-8">
             <h2 className="text-5xl md:text-7xl font-bold tracking-tight leading-none mb-6" data-testid="hero-heading">
               MANAGE TASKS WITH PRECISION
             </h2>
             <p className="text-base md:text-lg leading-relaxed text-muted-foreground mb-8" data-testid="hero-description">
               Schedule, assign, and track tasks with built-in phone calling and location mapping. Perfect for teams that need coordinated task management.
             </p>
-            <Button
-              size="lg"
-              className="uppercase tracking-wider h-12"
-              onClick={() => navigate("/auth?mode=register")}
-              data-testid="hero-cta-btn"
-            >
-              START MANAGING TASKS
-            </Button>
-          </div>
-          <div className="relative h-96 bg-secondary rounded-sm border border-border">
-            <img
-              src="https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg"
-              alt="Task Management"
-              className="w-full h-full object-cover rounded-sm"
-            />
+            <div className="flex flex-wrap gap-4 mb-8">
+              <Button
+                size="lg"
+                className="uppercase tracking-wider h-12"
+                onClick={() => navigate("/auth?mode=register")}
+                data-testid="hero-cta-btn"
+              >
+                START MANAGING TASKS
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="uppercase tracking-wider h-12"
+                onClick={() => navigate("/auth")}
+              >
+                LOGIN
+              </Button>
+            </div>
+            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                <span>Free trial available</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                <span>No credit card required</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>

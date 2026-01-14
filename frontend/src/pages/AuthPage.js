@@ -100,11 +100,43 @@ const AuthPage = ({ setUser }) => {
   const getSelectedPlanDetails = () => {
     const planType = selectedPlan.includes("basic") ? "basic" : "premium";
     const cycle = selectedPlan.includes("monthly") ? "monthly" : "yearly";
+    const basePlan = plans[planType][cycle];
+    
+    let finalPrice = basePlan.price;
+    let finalAmount = basePlan.amount;
+    
+    if (discountApplied && VALID_DISCOUNT_CODES[discountCode.toUpperCase()]) {
+      const discountPercent = VALID_DISCOUNT_CODES[discountCode.toUpperCase()].discount;
+      finalPrice = Math.round(basePlan.price * (1 - discountPercent / 100));
+      finalAmount = Math.round(basePlan.amount * (1 - discountPercent / 100));
+    }
+    
     return {
-      ...plans[planType][cycle],
+      ...basePlan,
+      originalPrice: basePlan.price,
+      price: finalPrice,
+      amount: finalAmount,
       type: planType,
       cycle: cycle
     };
+  };
+
+  const applyDiscountCode = () => {
+    const code = discountCode.toUpperCase().trim();
+    if (VALID_DISCOUNT_CODES[code]) {
+      setDiscountApplied(true);
+      setDiscountError("");
+      toast.success(`🎉 ${VALID_DISCOUNT_CODES[code].label} applied!`);
+    } else {
+      setDiscountApplied(false);
+      setDiscountError("Invalid discount code");
+    }
+  };
+
+  const removeDiscount = () => {
+    setDiscountCode("");
+    setDiscountApplied(false);
+    setDiscountError("");
   };
 
   const initiatePayment = async () => {

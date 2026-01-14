@@ -38,6 +38,7 @@ class UserRegister(BaseModel):
     password: str
     name: str
     phone: str
+    membership_plan: Optional[str] = None  # "basic_monthly", "basic_yearly", "premium_monthly", "premium_yearly"
     payment_order_id: Optional[str] = None
     payment_id: Optional[str] = None
     payment_signature: Optional[str] = None
@@ -53,11 +54,22 @@ class UserResponse(BaseModel):
     phone: str
     created_at: str
     is_paid: bool
+    membership_type: Optional[str] = None  # "basic" or "premium"
+    membership_plan: Optional[str] = None  # "monthly" or "yearly"
+    membership_expires_at: Optional[str] = None
 
 class Token(BaseModel):
     access_token: str
     token_type: str
     user: UserResponse
+
+# Membership pricing configuration
+MEMBERSHIP_PLANS = {
+    "basic_monthly": {"type": "basic", "plan": "monthly", "amount": 9000, "display": "₹90/month"},
+    "basic_yearly": {"type": "basic", "plan": "yearly", "amount": 49900, "display": "₹499/year"},
+    "premium_monthly": {"type": "premium", "plan": "monthly", "amount": 18000, "display": "₹180/month"},
+    "premium_yearly": {"type": "premium", "plan": "yearly", "amount": 99900, "display": "₹999/year"}
+}
 
 class TaskCreate(BaseModel):
     title: str

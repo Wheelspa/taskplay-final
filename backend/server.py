@@ -248,6 +248,79 @@ async def verify_payment(payment: PaymentVerify):
     except Exception as e:
         raise HTTPException(status_code=400, detail="Payment verification failed")
 
+class UpgradeMembership(BaseModel):
+    membership_plan: str
+    payment_order_id: str
+    payment_id: str
+    payment_signature: str
+
+@api_router.post("/membership/upgrade")
+async def upgrade_membership(upgrade: UpgradeMembership, current_user: dict = Depends(get_current_user)):
+    """Upgrade existing user's membership"""
+    try:
+        # Verify payment
+        if USE_MOCK_PAYMENT:
+            if not (upgrade.payment_order_id.startswith("mock_order_") and upgrade.payment_id.startswith("mock_pay_")):
+                raise HTTPException(status_code=400, detail="Invalid mock payment")
+        else:
+            params_dict = {
+                'razorpay_order_id': upgrade.payment_order_id,
+                'razorpay_payment_id': upgrade.payment_id,
+                'razorpay_signature': upgrade.payment_signature
+            }
+            razorpay_client.utility.verify_payment_signature(params_dict)
+        
+        # Validate plan
+        if upgrade.membership_plan not in MEMBERSHIP_PLANS:
+            raise HTTPException(status_code=400, detail="Invalid membership plan")
+        
+        plan_info = MEMBERSHIP_PLANS[upgrade.membership_plan]
+        
+        # Calculate expiration
+        now = datetime.now(timezone.utc)
+        if plan_info["plan"] == "yearly":
+            expires = now + timedelta(days=365)
+        else:
+            expires = now + timedelta(days=30)
+        
+        # Update user's membership
+        await db.users.update_one(
+            {"_id": current_user["id"]},
+            {
+                "$set": {
+                    "is_paid": True,
+                    "membership_type": plan_info["type"],
+                    "membership_plan": plan_info["plan"],
+                    "membership_expires_at": expires.isoformat(),
+                    "upgraded_at": now.isoformat()
+                }
+            }
+        )
+        
+        # Fetch updated user
+        updated_user = await db.users.find_one({"_id": current_user["id"]})
+        
+        return {
+            "status": "success",
+            "message": f"Successfully upgraded to {plan_info['type'].title()} plan",
+            "user": UserResponse(
+                id=updated_user["_id"],
+                email=updated_user["email"],
+                name=updated_user["name"],
+                phone=updated_user["phone"],
+                created_at=updated_user["created_at"],
+                is_paid=True,
+                membership_type=plan_info["type"],
+                membership_plan=plan_info["plan"],
+                membership_expires_at=expires.isoformat()
+            )
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Upgrade failed: {e}")
+        raise HTTPException(status_code=400, detail="Payment verification failed")
+
 @api_router.get("/membership/plans")
 async def get_membership_plans():
     """Get available membership plans"""

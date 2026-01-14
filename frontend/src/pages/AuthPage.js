@@ -525,13 +525,13 @@ const AuthPage = ({ setUser }) => {
                   {discountError && (
                     <p className="text-red-500 text-xs mt-1">{discountError}</p>
                   )}
-                  {discountApplied && (
+                  {discountApplied && VALID_DISCOUNT_CODES[discountCode.toUpperCase()] && (
                     <p className="text-green-600 text-xs mt-1 font-medium">
                       ✓ {VALID_DISCOUNT_CODES[discountCode.toUpperCase()].label}
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground mt-2">
-                    🎁 Limited time offer: Use code <strong>EARLYBIRD</strong> for 50% off!
+                    🎁 <strong>EARLYBIRD</strong> - 50% off! Expires Feb 28, 2025
                   </p>
                 </div>
 

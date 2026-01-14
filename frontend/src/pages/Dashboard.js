@@ -30,6 +30,29 @@ const Dashboard = ({ user, setUser }) => {
     fetchDashboardData();
   }, []);
 
+  // Priority order for sorting (lower number = higher priority)
+  const priorityOrder = {
+    "super_important": 1,
+    "high": 2,
+    "medium": 3,
+    "low": 4
+  };
+
+  // Sort tasks: completed at bottom, then by priority
+  const sortTasks = (tasks) => {
+    return [...tasks].sort((a, b) => {
+      // Completed tasks go to bottom
+      if (a.status === "completed" && b.status !== "completed") return 1;
+      if (a.status !== "completed" && b.status === "completed") return -1;
+      
+      // If both completed or both not completed, sort by priority
+      const priorityA = priorityOrder[a.priority] || 5;
+      const priorityB = priorityOrder[b.priority] || 5;
+      
+      return priorityA - priorityB;
+    });
+  };
+
   const fetchDashboardData = async () => {
     try {
       const [statsResponse, tasksResponse, scoresResponse] = await Promise.all([
@@ -38,7 +61,10 @@ const Dashboard = ({ user, setUser }) => {
         axios.get(`${API}/tasks/stats/scores`)
       ]);
       setStats(statsResponse.data);
-      setRecentTasks(tasksResponse.data.slice(0, 5));
+      
+      // Sort tasks and take top 10 for display
+      const sortedTasks = sortTasks(tasksResponse.data);
+      setRecentTasks(sortedTasks.slice(0, 10));
       
       const newScores = scoresResponse.data;
       

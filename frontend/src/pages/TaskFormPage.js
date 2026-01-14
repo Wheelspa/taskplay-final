@@ -165,6 +165,7 @@ const TaskFormPage = ({ user, setUser }) => {
       });
       if (task.location_lat && task.location_lng) {
         setMapPosition([task.location_lat, task.location_lng]);
+        setShowMap(true); // Show map if task has location data
       }
     } catch (error) {
       toast.error("Failed to fetch task");
@@ -181,8 +182,9 @@ const TaskFormPage = ({ user, setUser }) => {
     try {
       const submitData = {
         ...formData,
-        location_lat: mapPosition[0],
-        location_lng: mapPosition[1]
+        // Only include location coordinates if map is shown
+        location_lat: showMap ? mapPosition[0] : null,
+        location_lng: showMap ? mapPosition[1] : null
       };
 
       if (isEdit) {

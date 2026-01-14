@@ -25,9 +25,18 @@ Build a comprehensive task management application named "TaskPro" with:
 
 ### Completed Features ✅
 1. **User Authentication**
-   - Registration with mock payment flow
+   - Registration with membership plan selection
+   - Two membership tiers: Basic and Premium
+   - Monthly and Yearly billing options
    - JWT-based login/logout
    - Protected routes
+
+2. **Membership Plans**
+   - **Basic Monthly**: ₹90/month (50 tasks/month, Basic analytics, Email support, Calendar view)
+   - **Basic Yearly**: ₹499/year (Save ₹581)
+   - **Premium Monthly**: ₹180/month (Unlimited tasks, Advanced analytics, Team collaboration, Priority support, Custom reports, API access)
+   - **Premium Yearly**: ₹999/year (Save ₹1,161)
+   - Mock payment for testing (Razorpay integration ready)
 
 2. **Task Management**
    - Full CRUD operations

@@ -419,13 +419,27 @@ const TaskFormPage = ({ user, setUser }) => {
             </div>
 
             <div className="md:col-span-2">
-              <Label htmlFor="location_address">LOCATION ADDRESS</Label>
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <Label htmlFor="location_address">LOCATION ADDRESS</Label>
+                  <p className="text-xs text-muted-foreground mt-1">Optional - Add a location for this task</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Show Map</span>
+                  <Switch
+                    checked={showMap}
+                    onCheckedChange={setShowMap}
+                    data-testid="toggle-map-switch"
+                  />
+                </div>
+              </div>
               <Input
                 id="location_address"
                 type="text"
                 value={formData.location_address}
                 onChange={(e) => setFormData({ ...formData, location_address: e.target.value })}
-                placeholder="Enter address or click on map"
+                placeholder="Enter address manually or enable map to pick location"
                 data-testid="task-location-input"
                 className="mt-2"
                 list="location-suggestions"
@@ -442,49 +456,51 @@ const TaskFormPage = ({ user, setUser }) => {
               )}
             </div>
 
-            <div className="md:col-span-2">
-              <Label>LOCATION ON MAP</Label>
-              <p className="text-sm text-muted-foreground mb-3">Search for a location or click on the map to select</p>
-              
-              {/* Location Search Bar */}
-              <div className="flex gap-2 mb-3">
-                <Input
-                  type="text"
-                  placeholder="Search location (e.g., Times Square, New York or Mumbai, India)"
-                  value={locationSearch}
-                  onChange={(e) => setLocationSearch(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && searchLocation()}
-                  data-testid="location-search-input"
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  onClick={searchLocation}
-                  disabled={searchingLocation}
-                  data-testid="search-location-btn"
-                >
-                  {searchingLocation ? "SEARCHING..." : "SEARCH"}
-                </Button>
-              </div>
-
-              <div className="border border-border rounded-sm overflow-hidden" data-testid="task-map">
-                <MapContainer
-                  center={mapPosition}
-                  zoom={13}
-                  style={{ height: "400px", width: "100%" }}
-                  key={`${mapPosition[0]}-${mapPosition[1]}`}
-                >
-                  <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            {showMap && (
+              <div className="md:col-span-2">
+                <Label>LOCATION ON MAP</Label>
+                <p className="text-sm text-muted-foreground mb-3">Search for a location or click on the map to select</p>
+                
+                {/* Location Search Bar */}
+                <div className="flex gap-2 mb-3">
+                  <Input
+                    type="text"
+                    placeholder="Search location (e.g., Times Square, New York or Mumbai, India)"
+                    value={locationSearch}
+                    onChange={(e) => setLocationSearch(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && searchLocation()}
+                    data-testid="location-search-input"
+                    className="flex-1"
                   />
-                  <LocationPicker position={mapPosition} setPosition={setMapPosition} />
-                </MapContainer>
+                  <Button
+                    type="button"
+                    onClick={searchLocation}
+                    disabled={searchingLocation}
+                    data-testid="search-location-btn"
+                  >
+                    {searchingLocation ? "SEARCHING..." : "SEARCH"}
+                  </Button>
+                </div>
+
+                <div className="border border-border rounded-sm overflow-hidden" data-testid="task-map">
+                  <MapContainer
+                    center={mapPosition}
+                    zoom={13}
+                    style={{ height: "400px", width: "100%" }}
+                    key={`${mapPosition[0]}-${mapPosition[1]}`}
+                  >
+                    <TileLayer
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    />
+                    <LocationPicker position={mapPosition} setPosition={setMapPosition} />
+                  </MapContainer>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Selected: {mapPosition[0].toFixed(6)}, {mapPosition[1].toFixed(6)}
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Selected: {mapPosition[0].toFixed(6)}, {mapPosition[1].toFixed(6)}
-              </p>
-            </div>
+            )}
           </div>
 
           <div className="flex gap-4">

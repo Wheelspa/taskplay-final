@@ -791,6 +791,8 @@ const Dashboard = ({ user, setUser }) => {
             </div>
           </div>
         </div>
+          </div>
+        </div>
       </div>
     </div>
   );

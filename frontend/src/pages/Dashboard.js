@@ -341,43 +341,71 @@ const Dashboard = ({ user, setUser }) => {
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-6 md:px-12 py-12">
-        <div className="mb-12">
-          <h2 className="text-4xl md:text-5xl font-semibold tracking-tight mb-4" data-testid="dashboard-heading">
-            DASHBOARD
-          </h2>
-          <p className="text-muted-foreground">Overview of your task management</p>
+      <div className="flex">
+        {/* Brand Ambassador - Left Sidebar */}
+        <div className="hidden lg:block w-64 flex-shrink-0 bg-gradient-to-b from-primary/5 to-purple-500/5 border-r border-border p-6">
+          <div className="sticky top-6">
+            <img
+              src="https://customer-assets.emergentagent.com/job_taskflow-pro-95/artifacts/mrfodckx_Gemini_Generated_Image_xk0v49xk0v49xk0v.png"
+              alt="TaskPro Brand Ambassador"
+              className="w-full h-auto rounded-sm shadow-lg mb-4"
+              data-testid="brand-ambassador-full"
+            />
+            <h3 className="text-lg font-bold text-primary text-center">TASKPRO</h3>
+            <p className="text-xs text-muted-foreground text-center mt-1">Trusted by 10,000+ Professionals</p>
+            <div className="mt-4 space-y-2 text-xs text-muted-foreground">
+              <p className="flex items-center gap-2">
+                <CheckCircle2 className="w-3 h-3 text-green-600" /> Manage tasks efficiently
+              </p>
+              <p className="flex items-center gap-2">
+                <CheckCircle2 className="w-3 h-3 text-green-600" /> Team collaboration
+              </p>
+              <p className="flex items-center gap-2">
+                <CheckCircle2 className="w-3 h-3 text-green-600" /> Track progress & scores
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-12">
-          <div className="border border-border bg-secondary p-6 rounded-sm" data-testid="stat-total">
-            <ListTodo className="w-6 h-6 mb-3 text-primary" />
-            <div className="text-3xl font-bold mb-1">{stats?.total || 0}</div>
-            <div className="text-sm text-muted-foreground uppercase tracking-wide">Total Tasks</div>
-          </div>
-          
-          <div className="border border-border bg-secondary p-6 rounded-sm" data-testid="stat-pending">
-            <Clock className="w-6 h-6 mb-3 text-orange-500" />
-            <div className="text-3xl font-bold mb-1">{stats?.pending || 0}</div>
-            <div className="text-sm text-muted-foreground uppercase tracking-wide">Pending</div>
-          </div>
-          
-          <div className="border border-border bg-secondary p-6 rounded-sm" data-testid="stat-in-progress">
-            <Calendar className="w-6 h-6 mb-3 text-blue-500" />
-            <div className="text-3xl font-bold mb-1">{stats?.in_progress || 0}</div>
-            <div className="text-sm text-muted-foreground uppercase tracking-wide">In Progress</div>
-          </div>
-          
-          <div className="border border-border bg-secondary p-6 rounded-sm" data-testid="stat-completed">
-            <CheckCircle2 className="w-6 h-6 mb-3 text-green-500" />
-            <div className="text-3xl font-bold mb-1">{stats?.completed || 0}</div>
-            <div className="text-sm text-muted-foreground uppercase tracking-wide">Completed</div>
-          </div>
-          
-          <div className="border border-border bg-secondary p-6 rounded-sm" data-testid="stat-high-priority">
-            <AlertCircle className="w-6 h-6 mb-3 text-accent" />
-            <div className="text-3xl font-bold mb-1">{stats?.high_priority || 0}</div>
-            <div className="text-sm text-muted-foreground uppercase tracking-wide">High Priority</div>
+        {/* Main Content */}
+        <div className="flex-1 px-6 md:px-12 py-12">
+          <div className="max-w-6xl mx-auto">
+            <div className="mb-12">
+              <h2 className="text-4xl md:text-5xl font-semibold tracking-tight mb-4" data-testid="dashboard-heading">
+                DASHBOARD
+              </h2>
+              <p className="text-muted-foreground">Overview of your task management</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-12">
+              <div className="border border-border bg-secondary p-6 rounded-sm" data-testid="stat-total">
+                <ListTodo className="w-6 h-6 mb-3 text-primary" />
+                <div className="text-3xl font-bold mb-1">{stats?.total || 0}</div>
+                <div className="text-sm text-muted-foreground uppercase tracking-wide">Total Tasks</div>
+              </div>
+              
+              <div className="border border-border bg-secondary p-6 rounded-sm" data-testid="stat-pending">
+                <Clock className="w-6 h-6 mb-3 text-orange-500" />
+                <div className="text-3xl font-bold mb-1">{stats?.pending || 0}</div>
+                <div className="text-sm text-muted-foreground uppercase tracking-wide">Pending</div>
+              </div>
+              
+              <div className="border border-border bg-secondary p-6 rounded-sm" data-testid="stat-in-progress">
+                <Calendar className="w-6 h-6 mb-3 text-blue-500" />
+                <div className="text-3xl font-bold mb-1">{stats?.in_progress || 0}</div>
+                <div className="text-sm text-muted-foreground uppercase tracking-wide">In Progress</div>
+              </div>
+              
+              <div className="border border-border bg-secondary p-6 rounded-sm" data-testid="stat-completed">
+                <CheckCircle2 className="w-6 h-6 mb-3 text-green-500" />
+                <div className="text-3xl font-bold mb-1">{stats?.completed || 0}</div>
+                <div className="text-sm text-muted-foreground uppercase tracking-wide">Completed</div>
+              </div>
+              
+              <div className="border border-border bg-secondary p-6 rounded-sm" data-testid="stat-high-priority">
+                <AlertCircle className="w-6 h-6 mb-3 text-accent" />
+                <div className="text-3xl font-bold mb-1">{stats?.high_priority || 0}</div>
+                <div className="text-sm text-muted-foreground uppercase tracking-wide">High Priority</div>
           </div>
 
           <div className="border border-border bg-primary/10 p-6 rounded-sm" data-testid="stat-progress">

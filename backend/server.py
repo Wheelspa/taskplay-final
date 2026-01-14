@@ -248,6 +248,52 @@ async def verify_payment(payment: PaymentVerify):
     except Exception as e:
         raise HTTPException(status_code=400, detail="Payment verification failed")
 
+@api_router.get("/membership/plans")
+async def get_membership_plans():
+    """Get available membership plans"""
+    return {
+        "plans": [
+            {
+                "id": "basic_monthly",
+                "type": "basic",
+                "billing": "monthly",
+                "price": 90,
+                "amount": 9000,  # In paise for Razorpay
+                "display": "₹90/month",
+                "features": ["Up to 50 tasks/month", "Basic analytics", "Email support"]
+            },
+            {
+                "id": "basic_yearly",
+                "type": "basic",
+                "billing": "yearly",
+                "price": 499,
+                "amount": 49900,
+                "display": "₹499/year",
+                "savings": "Save ₹581 (45%)",
+                "features": ["Up to 50 tasks/month", "Basic analytics", "Email support"]
+            },
+            {
+                "id": "premium_monthly",
+                "type": "premium",
+                "billing": "monthly",
+                "price": 180,
+                "amount": 18000,
+                "display": "₹180/month",
+                "features": ["Unlimited tasks", "Advanced analytics", "Team collaboration", "Priority support", "Custom reports"]
+            },
+            {
+                "id": "premium_yearly",
+                "type": "premium",
+                "billing": "yearly",
+                "price": 999,
+                "amount": 99900,
+                "display": "₹999/year",
+                "savings": "Save ₹1,161 (54%)",
+                "features": ["Unlimited tasks", "Advanced analytics", "Team collaboration", "Priority support", "Custom reports"]
+            }
+        ]
+    }
+
 @api_router.post("/auth/register", response_model=Token)
 async def register(user: UserRegister):
     existing_user = await db.users.find_one({"email": user.email})
@@ -255,6 +301,10 @@ async def register(user: UserRegister):
         raise HTTPException(status_code=400, detail="Email already registered")
     
     is_paid = False
+    membership_type = None
+    membership_plan = None
+    membership_expires_at = None
+    
     if user.payment_order_id and user.payment_id and user.payment_signature:
         try:
             if USE_MOCK_PAYMENT:
@@ -272,6 +322,21 @@ async def register(user: UserRegister):
                 }
                 razorpay_client.utility.verify_payment_signature(params_dict)
                 is_paid = True
+            
+            # Set membership details if payment verified
+            if is_paid and user.membership_plan and user.membership_plan in MEMBERSHIP_PLANS:
+                plan_info = MEMBERSHIP_PLANS[user.membership_plan]
+                membership_type = plan_info["type"]
+                membership_plan = plan_info["plan"]
+                
+                # Calculate expiration
+                now = datetime.now(timezone.utc)
+                if membership_plan == "yearly":
+                    expires = now + timedelta(days=365)
+                else:
+                    expires = now + timedelta(days=30)
+                membership_expires_at = expires.isoformat()
+                
         except Exception as e:
             raise HTTPException(status_code=400, detail="Payment verification failed")
     
@@ -283,6 +348,9 @@ async def register(user: UserRegister):
         "name": user.name,
         "phone": user.phone,
         "is_paid": is_paid,
+        "membership_type": membership_type,
+        "membership_plan": membership_plan,
+        "membership_expires_at": membership_expires_at,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     
@@ -296,7 +364,10 @@ async def register(user: UserRegister):
         name=user.name,
         phone=user.phone,
         created_at=user_doc["created_at"],
-        is_paid=is_paid
+        is_paid=is_paid,
+        membership_type=membership_type,
+        membership_plan=membership_plan,
+        membership_expires_at=membership_expires_at
     )
     
     return Token(access_token=access_token, token_type="bearer", user=user_response)
@@ -315,7 +386,10 @@ async def login(user: UserLogin):
         name=db_user["name"],
         phone=db_user["phone"],
         created_at=db_user["created_at"],
-        is_paid=db_user.get("is_paid", False)
+        is_paid=db_user.get("is_paid", False),
+        membership_type=db_user.get("membership_type"),
+        membership_plan=db_user.get("membership_plan"),
+        membership_expires_at=db_user.get("membership_expires_at")
     )
     
     return Token(access_token=access_token, token_type="bearer", user=user_response)

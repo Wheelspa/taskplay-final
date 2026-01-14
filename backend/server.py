@@ -402,7 +402,10 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         name=current_user["name"],
         phone=current_user["phone"],
         created_at=current_user["created_at"],
-        is_paid=current_user.get("is_paid", False)
+        is_paid=current_user.get("is_paid", False),
+        membership_type=current_user.get("membership_type"),
+        membership_plan=current_user.get("membership_plan"),
+        membership_expires_at=current_user.get("membership_expires_at")
     )
 
 @api_router.post("/tasks", response_model=TaskResponse)

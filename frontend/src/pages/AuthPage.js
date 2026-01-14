@@ -141,13 +141,15 @@ const AuthPage = ({ setUser }) => {
 
   const applyDiscountCode = () => {
     const code = discountCode.toUpperCase().trim();
-    if (VALID_DISCOUNT_CODES[code]) {
+    const validation = isDiscountCodeValid(code);
+    
+    if (validation.valid) {
       setDiscountApplied(true);
       setDiscountError("");
-      toast.success(`🎉 ${VALID_DISCOUNT_CODES[code].label} applied!`);
+      toast.success(`🎉 ${validation.discountInfo.label} applied!`);
     } else {
       setDiscountApplied(false);
-      setDiscountError("Invalid discount code");
+      setDiscountError(validation.reason);
     }
   };
 

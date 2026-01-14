@@ -33,8 +33,26 @@ const AuthPage = ({ setUser }) => {
   const [discountApplied, setDiscountApplied] = useState(false);
   const [discountError, setDiscountError] = useState("");
 
+  // Discount codes with expiration dates
   const VALID_DISCOUNT_CODES = {
-    "EARLYBIRD": { discount: 50, label: "50% OFF - Early Bird Offer!" }
+    "EARLYBIRD": { 
+      discount: 50, 
+      label: "50% OFF - Early Bird Offer!",
+      expiresAt: new Date("2025-02-28T23:59:59"), // Valid until Feb 28, 2025
+      description: "Limited time offer - Expires Feb 28, 2025"
+    }
+  };
+
+  const isDiscountCodeValid = (code) => {
+    const discountInfo = VALID_DISCOUNT_CODES[code.toUpperCase()];
+    if (!discountInfo) return { valid: false, reason: "Invalid discount code" };
+    
+    const now = new Date();
+    if (discountInfo.expiresAt && now > discountInfo.expiresAt) {
+      return { valid: false, reason: "This discount code has expired" };
+    }
+    
+    return { valid: true, discountInfo };
   };
 
   const plans = {

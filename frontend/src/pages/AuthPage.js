@@ -279,55 +279,83 @@ const AuthPage = ({ setUser }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 py-12 bg-secondary">
-      <div className={`w-full ${mode === "register" ? "max-w-4xl" : "max-w-md"}`}>
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold tracking-tight mb-2" data-testid="auth-heading">
-            {mode === "login" ? "LOGIN" : "CREATE ACCOUNT"}
-          </h1>
-          <p className="text-muted-foreground">
-            {mode === "login"
-              ? "Sign in to your TaskPro account"
-              : "Choose a plan and get started"}
-          </p>
+    <div className="min-h-screen flex bg-secondary">
+      {/* Brand Ambassador - Left Side */}
+      <div className="hidden lg:flex lg:w-1/3 bg-gradient-to-br from-primary/10 to-purple-500/10 items-center justify-center p-8 relative">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-purple-500/5"></div>
+        <div className="relative text-center">
+          <img
+            src="https://customer-assets.emergentagent.com/job_taskflow-pro-95/artifacts/mrfodckx_Gemini_Generated_Image_xk0v49xk0v49xk0v.png"
+            alt="TaskPro Brand Ambassador"
+            className="w-80 h-auto rounded-sm shadow-2xl mx-auto mb-6"
+            data-testid="brand-ambassador-img"
+          />
+          <h2 className="text-2xl font-bold text-primary mb-2">TASKPRO</h2>
+          <p className="text-muted-foreground text-sm">Trusted by 10,000+ Professionals</p>
+          <div className="mt-6 space-y-2">
+            <p className="text-xs text-muted-foreground flex items-center justify-center gap-2">
+              <Check className="w-4 h-4 text-green-600" /> Manage tasks efficiently
+            </p>
+            <p className="text-xs text-muted-foreground flex items-center justify-center gap-2">
+              <Check className="w-4 h-4 text-green-600" /> Team collaboration
+            </p>
+            <p className="text-xs text-muted-foreground flex items-center justify-center gap-2">
+              <Check className="w-4 h-4 text-green-600" /> Track progress & scores
+            </p>
+          </div>
         </div>
+      </div>
 
-        {mode === "login" ? (
-          <div className="bg-background border border-border rounded-sm p-8">
-            <form onSubmit={handleLogin} className="space-y-6">
-              <div>
-                <Label htmlFor="email">EMAIL</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={loginData.email}
-                  onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                  required
-                  data-testid="login-email-input"
-                  className="mt-2"
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">PASSWORD</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={loginData.password}
-                  onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                  required
-                  data-testid="login-password-input"
-                  className="mt-2"
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full uppercase tracking-wider h-12"
-                disabled={loading}
-                data-testid="login-submit-btn"
-              >
-                {loading ? "LOGGING IN..." : "LOGIN"}
-              </Button>
-            </form>
+      {/* Auth Form - Right Side */}
+      <div className="flex-1 flex items-center justify-center px-6 py-12">
+        <div className={`w-full ${mode === "register" ? "max-w-4xl" : "max-w-md"}`}>
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold tracking-tight mb-2" data-testid="auth-heading">
+              {mode === "login" ? "LOGIN" : "CREATE ACCOUNT"}
+            </h1>
+            <p className="text-muted-foreground">
+              {mode === "login"
+                ? "Sign in to your TaskPro account"
+                : "Choose a plan and get started"}
+            </p>
+          </div>
+
+          {mode === "login" ? (
+            <div className="bg-background border border-border rounded-sm p-8">
+              <form onSubmit={handleLogin} className="space-y-6">
+                <div>
+                  <Label htmlFor="email">EMAIL</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={loginData.email}
+                    onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                    required
+                    data-testid="login-email-input"
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="password">PASSWORD</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={loginData.password}
+                    onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                    required
+                    data-testid="login-password-input"
+                    className="mt-2"
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full uppercase tracking-wider h-12"
+                  disabled={loading}
+                  data-testid="login-submit-btn"
+                >
+                  {loading ? "LOGGING IN..." : "LOGIN"}
+                </Button>
+              </form>
             
             <div className="mt-6 text-center">
               <button

@@ -515,11 +515,22 @@ const Dashboard = ({ user, setUser }) => {
                       ⚠️ Expiring soon
                     </div>
                   )}
+                  {user?.membership_type === "basic" && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => navigate("/upgrade")}
+                      className="mt-2 border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white"
+                      data-testid="upgrade-to-premium-btn"
+                    >
+                      Upgrade to Premium
+                    </Button>
+                  )}
                 </div>
               ) : !user?.membership_type && (
                 <Button 
                   variant="outline" 
-                  onClick={() => navigate("/auth?mode=register")}
+                  onClick={() => navigate("/upgrade")}
                   className="border-primary text-primary hover:bg-primary hover:text-white"
                   data-testid="upgrade-btn"
                 >

@@ -29,6 +29,14 @@ const AuthPage = ({ setUser }) => {
     phone: ""
   });
 
+  const [discountCode, setDiscountCode] = useState("");
+  const [discountApplied, setDiscountApplied] = useState(false);
+  const [discountError, setDiscountError] = useState("");
+
+  const VALID_DISCOUNT_CODES = {
+    "EARLYBIRD": { discount: 50, label: "50% OFF - Early Bird Offer!" }
+  };
+
   const plans = {
     basic: {
       name: "Basic",
@@ -38,8 +46,7 @@ const AuthPage = ({ setUser }) => {
       features: [
         "Up to 50 tasks/month",
         "Basic analytics",
-        "Email support",
-        "Calendar view"
+        "Email support"
       ],
       color: "border-blue-500",
       bgColor: "bg-blue-50"
@@ -55,6 +62,7 @@ const AuthPage = ({ setUser }) => {
         "Team collaboration",
         "Priority support",
         "Custom reports",
+        "Calendar view",
         "API access"
       ],
       color: "border-purple-500",

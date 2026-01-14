@@ -155,6 +155,60 @@ const TeamsPage = ({ user, setUser }) => {
         </div>
       </nav>
 
+      <div className="flex">
+        {/* Team Image - Left Sidebar */}
+        <div className="hidden lg:block w-80 flex-shrink-0 bg-gradient-to-b from-primary/5 to-purple-500/5 border-r border-border p-6">
+          <div className="sticky top-6">
+            <img
+              src="https://customer-assets.emergentagent.com/job_taskflow-pro-95/artifacts/97bi891b_Gemini_Generated_Image_t1zkgat1zkgat1zk.png"
+              alt="Team Collaboration"
+              className="w-full h-auto rounded-sm shadow-lg mb-4"
+              data-testid="teams-image"
+            />
+            <h3 className="text-lg font-bold text-primary text-center">TEAM COLLABORATION</h3>
+            <p className="text-xs text-muted-foreground text-center mt-1">Work together, achieve more</p>
+            <div className="mt-4 space-y-2 text-xs text-muted-foreground">
+              <p className="flex items-center gap-2">
+                <Users className="w-3 h-3 text-primary" /> Create unlimited teams
+              </p>
+              <p className="flex items-center gap-2">
+                <UserPlus className="w-3 h-3 text-primary" /> Invite team members
+              </p>
+              <p className="flex items-center gap-2">
+                <Crown className="w-3 h-3 text-yellow-600" /> Role-based permissions
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 px-6 md:px-12 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <h2 className="text-4xl md:text-5xl font-semibold tracking-tight mb-2" data-testid="teams-heading">
+              MY TEAMS
+            </h2>
+            <p className="text-muted-foreground">
+              Collaborate with your team members on tasks
+            </p>
+          </div>
+          </div>
+
+          {/* Create Team Button */}
+          <div>
+            <Button
+              onClick={() => setShowCreateModal(true)}
+              size="lg"
+              className="uppercase tracking-wider"
+              data-testid="create-team-btn"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              CREATE TEAM
+            </Button>
+          </div>
+        </div>
+      </nav>
+
       <div className="max-w-7xl mx-auto px-6 md:px-12 py-8">
         {/* Header */}
         <div className="mb-8">

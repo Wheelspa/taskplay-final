@@ -463,6 +463,58 @@ const AuthPage = ({ setUser }) => {
                   </div>
                 </div>
 
+                {/* Discount Code Section */}
+                <div className="border border-dashed border-border rounded-sm p-4">
+                  <Label className="text-sm font-medium">HAVE A DISCOUNT CODE?</Label>
+                  <div className="flex gap-2 mt-2">
+                    <Input
+                      type="text"
+                      placeholder="Enter code (e.g., EARLYBIRD)"
+                      value={discountCode}
+                      onChange={(e) => {
+                        setDiscountCode(e.target.value.toUpperCase());
+                        setDiscountError("");
+                        if (discountApplied) setDiscountApplied(false);
+                      }}
+                      disabled={discountApplied}
+                      data-testid="discount-code-input"
+                      className="flex-1"
+                    />
+                    {discountApplied ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={removeDiscount}
+                        className="text-red-600"
+                        data-testid="remove-discount-btn"
+                      >
+                        Remove
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={applyDiscountCode}
+                        disabled={!discountCode.trim()}
+                        data-testid="apply-discount-btn"
+                      >
+                        Apply
+                      </Button>
+                    )}
+                  </div>
+                  {discountError && (
+                    <p className="text-red-500 text-xs mt-1">{discountError}</p>
+                  )}
+                  {discountApplied && (
+                    <p className="text-green-600 text-xs mt-1 font-medium">
+                      ✓ {VALID_DISCOUNT_CODES[discountCode.toUpperCase()].label}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-2">
+                    🎁 Limited time offer: Use code <strong>EARLYBIRD</strong> for 50% off!
+                  </p>
+                </div>
+
                 <div className="bg-accent/10 border border-accent p-4 rounded-sm">
                   <div className="flex justify-between items-center">
                     <div>
@@ -473,9 +525,19 @@ const AuthPage = ({ setUser }) => {
                         💡 Testing mode: Mock payment will be used (no real charges)
                       </p>
                     </div>
-                    <p className="text-2xl font-bold">
-                      ₹{getSelectedPlanDetails().price}
-                    </p>
+                    <div className="text-right">
+                      {discountApplied && (
+                        <p className="text-sm text-muted-foreground line-through">
+                          ₹{getSelectedPlanDetails().originalPrice}
+                        </p>
+                      )}
+                      <p className="text-2xl font-bold text-green-600">
+                        ₹{getSelectedPlanDetails().price}
+                      </p>
+                      {discountApplied && (
+                        <p className="text-xs text-green-600 font-medium">50% OFF applied!</p>
+                      )}
+                    </div>
                   </div>
                 </div>
 

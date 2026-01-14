@@ -276,7 +276,15 @@ const Dashboard = ({ user, setUser }) => {
       <nav className="border-b border-border">
         <div className="max-w-7xl mx-auto px-6 md:px-12 py-6">
           <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold tracking-tight" data-testid="dashboard-logo">TASKPRO</h1>
+            <div className="flex items-center gap-4">
+              <img
+                src="https://customer-assets.emergentagent.com/job_taskflow-pro-95/artifacts/mrfodckx_Gemini_Generated_Image_xk0v49xk0v49xk0v.png"
+                alt="TaskPro Brand Ambassador"
+                className="w-12 h-12 rounded-full object-cover border-2 border-primary shadow-md"
+                data-testid="brand-ambassador-nav"
+              />
+              <h1 className="text-2xl font-bold tracking-tight" data-testid="dashboard-logo">TASKPRO</h1>
+            </div>
             <div className="flex items-center gap-4">
               {criticalTasks.length > 0 && (
                 <Button

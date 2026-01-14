@@ -15,6 +15,29 @@ const TaskListPage = ({ user, setUser }) => {
   const [statusFilter, setStatusFilter] = useState(searchParams.get("status") || "all");
   const [priorityFilter, setPriorityFilter] = useState(searchParams.get("priority") || "all");
 
+  // Priority order for sorting (lower number = higher priority)
+  const priorityOrder = {
+    "super_important": 1,
+    "high": 2,
+    "medium": 3,
+    "low": 4
+  };
+
+  // Sort tasks: completed at bottom, then by priority
+  const sortTasks = (tasksToSort) => {
+    return [...tasksToSort].sort((a, b) => {
+      // Completed tasks go to bottom
+      if (a.status === "completed" && b.status !== "completed") return 1;
+      if (a.status !== "completed" && b.status === "completed") return -1;
+      
+      // If both completed or both not completed, sort by priority
+      const priorityA = priorityOrder[a.priority] || 5;
+      const priorityB = priorityOrder[b.priority] || 5;
+      
+      return priorityA - priorityB;
+    });
+  };
+
   useEffect(() => {
     fetchTasks();
   }, [statusFilter, priorityFilter]);
@@ -26,7 +49,8 @@ const TaskListPage = ({ user, setUser }) => {
       if (priorityFilter !== "all") params.priority = priorityFilter;
       
       const response = await axios.get(`${API}/tasks`, { params });
-      setTasks(response.data);
+      // Sort tasks before setting
+      setTasks(sortTasks(response.data));
     } catch (error) {
       toast.error("Failed to fetch tasks");
     } finally {

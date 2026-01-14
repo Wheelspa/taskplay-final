@@ -110,6 +110,14 @@ function App() {
             }
           />
           <Route
+            path="/upgrade"
+            element={
+              <ProtectedRoute>
+                <UpgradePage user={user} setUser={setUser} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/tasks"
             element={
               <ProtectedRoute>

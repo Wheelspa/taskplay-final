@@ -336,14 +336,27 @@ const Dashboard = ({ user, setUser }) => {
                 </Button>
               )}
               <span className="text-sm text-muted-foreground" data-testid="user-name">Welcome, {user?.name}</span>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/calendar")}
-                data-testid="calendar-view-btn"
-              >
-                <CalendarDays className="w-4 h-4 mr-2" />
-                CALENDAR
-              </Button>
+              {user?.membership_type !== "basic" && (
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/calendar")}
+                  data-testid="calendar-view-btn"
+                >
+                  <CalendarDays className="w-4 h-4 mr-2" />
+                  CALENDAR
+                </Button>
+              )}
+              {user?.membership_type === "basic" && (
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/upgrade?feature=calendar")}
+                  data-testid="calendar-upgrade-btn"
+                  className="border-purple-600 text-purple-600"
+                >
+                  <Crown className="w-4 h-4 mr-2" />
+                  CALENDAR (Premium)
+                </Button>
+              )}
               <Button
                 variant="outline"
                 onClick={() => navigate("/teams")}

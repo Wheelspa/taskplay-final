@@ -388,6 +388,16 @@ const Dashboard = ({ user, setUser }) => {
               <Plus className="w-5 h-5 mr-2" />
               ADD NEW TASK
             </Button>
+            <Button
+              onClick={() => setShowVoiceCreator(true)}
+              size="lg"
+              variant="outline"
+              className="uppercase tracking-wider border-primary text-primary hover:bg-primary hover:text-white"
+              data-testid="voice-task-btn"
+            >
+              <Mic className="w-5 h-5 mr-2" />
+              VOICE COMMAND
+            </Button>
           </div>
         </div>
       </nav>

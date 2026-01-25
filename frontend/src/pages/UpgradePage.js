@@ -1,42 +1,52 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import { API } from "../App";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, Crown, Zap, ArrowLeft } from "lucide-react";
+import { Check, Crown, Zap, ArrowLeft, AlertCircle, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 
 const UpgradePage = ({ user, setUser }) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState("premium_yearly");
   const [billingCycle, setBillingCycle] = useState("yearly");
   const [discountCode, setDiscountCode] = useState("");
   const [discountApplied, setDiscountApplied] = useState(false);
   const [discountError, setDiscountError] = useState("");
+  const [validatingCode, setValidatingCode] = useState(false);
+  
+  // Check if user was redirected from a premium feature
+  const featureRequested = searchParams.get("feature");
 
-  // Discount codes with expiration dates
-  const VALID_DISCOUNT_CODES = {
-    "EARLYBIRD": { 
-      discount: 50, 
-      label: "50% OFF - Early Bird Offer!",
-      expiresAt: new Date("2025-02-28T23:59:59"),
-      description: "Limited time offer - Expires Feb 28, 2025"
-    }
-  };
-
-  const isDiscountCodeValid = (code) => {
-    const discountInfo = VALID_DISCOUNT_CODES[code.toUpperCase()];
-    if (!discountInfo) return { valid: false, reason: "Invalid discount code" };
-    
-    const now = new Date();
-    if (discountInfo.expiresAt && now > discountInfo.expiresAt) {
-      return { valid: false, reason: "This discount code has expired" };
+  const applyDiscountCode = async () => {
+    if (!discountCode.trim()) {
+      setDiscountError("Please enter a discount code");
+      return;
     }
     
-    return { valid: true, discountInfo };
+    setValidatingCode(true);
+    setDiscountError("");
+    
+    try {
+      const response = await axios.post(`${API}/discount/validate?code=${encodeURIComponent(discountCode)}`);
+      if (response.data.valid) {
+        setDiscountApplied(true);
+        setDiscountError("");
+        toast.success(`${response.data.description} applied!`);
+      } else {
+        setDiscountApplied(false);
+        setDiscountError(response.data.error || "Invalid discount code");
+      }
+    } catch (error) {
+      setDiscountApplied(false);
+      setDiscountError(error.response?.data?.detail || "Failed to validate discount code");
+    } finally {
+      setValidatingCode(false);
+    }
   };
 
   const plans = {

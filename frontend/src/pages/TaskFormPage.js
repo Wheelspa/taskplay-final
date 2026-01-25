@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { LogOut, ArrowLeft, Save, Search, MapPin } from "lucide-react";
+import { LogOut, ArrowLeft, Save, Search, MapPin, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -42,6 +42,7 @@ const TaskFormPage = ({ user, setUser }) => {
   const [mapPosition, setMapPosition] = useState([28.6139, 77.2090]);
   const [locationSearch, setLocationSearch] = useState("");
   const [searchingLocation, setSearchingLocation] = useState(false);
+  const [taskGroups, setTaskGroups] = useState([]);
   const [suggestions, setSuggestions] = useState({
     titles: [],
     assigneeNames: [],
@@ -60,15 +61,26 @@ const TaskFormPage = ({ user, setUser }) => {
     location_lat: null,
     location_lng: null,
     location_address: "",
-    status: "pending"
+    status: "pending",
+    group_id: null
   });
 
   useEffect(() => {
     fetchSuggestions();
+    fetchTaskGroups();
     if (isEdit) {
       fetchTask();
     }
   }, [taskId]);
+
+  const fetchTaskGroups = async () => {
+    try {
+      const response = await axios.get(`${API}/task-groups`);
+      setTaskGroups(response.data);
+    } catch (error) {
+      console.error("Failed to fetch task groups:", error);
+    }
+  };
 
   const fetchSuggestions = async () => {
     try {
@@ -161,7 +173,8 @@ const TaskFormPage = ({ user, setUser }) => {
         location_lat: task.location_lat,
         location_lng: task.location_lng,
         location_address: task.location_address || "",
-        status: task.status || "pending"
+        status: task.status || "pending",
+        group_id: task.group_id || null
       });
       if (task.location_lat && task.location_lng) {
         setMapPosition([task.location_lat, task.location_lng]);

@@ -866,6 +866,17 @@ const Dashboard = ({ user, setUser }) => {
           </div>
         </div>
       </div>
+
+      {/* Voice Task Creator Modal */}
+      <VoiceTaskCreator
+        open={showVoiceCreator}
+        onOpenChange={setShowVoiceCreator}
+        groups={taskGroups}
+        onTaskCreated={(task) => {
+          fetchDashboardData();
+          toast.success("Task created via voice command!");
+        }}
+      />
     </div>
   );
 };

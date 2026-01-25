@@ -354,6 +354,14 @@ const Dashboard = ({ user, setUser }) => {
               </Button>
               <Button
                 variant="outline"
+                onClick={() => navigate("/groups")}
+                data-testid="groups-view-btn"
+              >
+                <FolderOpen className="w-4 h-4 mr-2" />
+                GROUPS
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => navigate("/tasks")}
                 data-testid="view-all-tasks-btn"
               >
@@ -369,8 +377,8 @@ const Dashboard = ({ user, setUser }) => {
             </div>
           </div>
           
-          {/* Add Task Button Below Logo */}
-          <div>
+          {/* Add Task Buttons Below Logo */}
+          <div className="flex gap-2">
             <Button
               onClick={() => navigate("/tasks/new")}
               size="lg"

@@ -424,6 +424,13 @@ async def register(user: UserRegister):
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
+    # Validate discount code if provided
+    discount_info = None
+    if user.discount_code:
+        discount_info = validate_discount_code(user.discount_code)
+        if discount_info and not discount_info.get("valid"):
+            raise HTTPException(status_code=400, detail=discount_info.get("error", "Invalid discount code"))
+    
     is_paid = False
     membership_type = None
     membership_plan = None
@@ -475,7 +482,8 @@ async def register(user: UserRegister):
         "membership_type": membership_type,
         "membership_plan": membership_plan,
         "membership_expires_at": membership_expires_at,
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "discount_code_used": user.discount_code.upper() if user.discount_code else None
     }
     
     await db.users.insert_one(user_doc)

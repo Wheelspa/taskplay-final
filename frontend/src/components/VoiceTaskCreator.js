@@ -154,19 +154,40 @@ const VoiceTaskCreator = ({ open, onOpenChange, onTaskCreated, groups = [] }) =>
     };
   };
 
-  const handleProcessVoice = () => {
+  const handleProcessVoice = async () => {
     if (!transcript.trim()) {
       toast.error("Please speak something first");
       return;
     }
 
     setIsProcessing(true);
-    setTimeout(() => {
-      const parsed = parseVoiceCommand(transcript);
+    
+    // Parse the voice command
+    const parsed = parseVoiceCommand(transcript);
+    
+    if (!parsed.title || parsed.title === "New Task") {
+      toast.error("Could not understand the task. Please try again.");
+      setIsProcessing(false);
+      return;
+    }
+
+    // Automatically create the task
+    try {
+      const response = await axios.post(`${API}/tasks`, parsed);
+      toast.success(`Task "${parsed.title}" created successfully!`, {
+        description: `Priority: ${parsed.priority}${parsed.scheduled_date ? ` | Date: ${parsed.scheduled_date}` : ''}`,
+        duration: 4000
+      });
+      onTaskCreated?.(response.data);
+      handleClose();
+    } catch (error) {
+      toast.error("Failed to create task");
+      // Fall back to edit mode if auto-save fails
       setParsedTask(parsed);
       setEditMode(true);
+    } finally {
       setIsProcessing(false);
-    }, 500);
+    }
   };
 
   const handleCreateTask = async () => {

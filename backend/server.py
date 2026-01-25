@@ -500,6 +500,161 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         membership_expires_at=current_user.get("membership_expires_at")
     )
 
+# ==================== TASK GROUP ENDPOINTS ====================
+
+@api_router.post("/task-groups", response_model=TaskGroupResponse)
+async def create_task_group(group: TaskGroupCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new task group"""
+    group_id = f"group_{datetime.now(timezone.utc).timestamp()}"
+    group_doc = {
+        "_id": group_id,
+        "name": group.name,
+        "description": group.description,
+        "color": group.color or "#3B82F6",
+        "created_by": current_user["id"],
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.task_groups.insert_one(group_doc)
+    
+    return TaskGroupResponse(
+        id=group_id,
+        name=group.name,
+        description=group.description,
+        color=group_doc["color"],
+        created_by=current_user["id"],
+        created_at=group_doc["created_at"],
+        task_count=0
+    )
+
+@api_router.get("/task-groups", response_model=List[TaskGroupResponse])
+async def get_task_groups(current_user: dict = Depends(get_current_user)):
+    """Get all task groups for the current user"""
+    groups = await db.task_groups.find({"created_by": current_user["id"]}).to_list(100)
+    
+    result = []
+    for group in groups:
+        task_count = await db.tasks.count_documents({
+            "created_by": current_user["id"],
+            "group_id": group["_id"]
+        })
+        result.append(TaskGroupResponse(
+            id=group["_id"],
+            name=group["name"],
+            description=group.get("description"),
+            color=group.get("color", "#3B82F6"),
+            created_by=group["created_by"],
+            created_at=group["created_at"],
+            task_count=task_count
+        ))
+    
+    return result
+
+@api_router.get("/task-groups/{group_id}", response_model=TaskGroupResponse)
+async def get_task_group(group_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a specific task group"""
+    group = await db.task_groups.find_one({"_id": group_id, "created_by": current_user["id"]})
+    if not group:
+        raise HTTPException(status_code=404, detail="Task group not found")
+    
+    task_count = await db.tasks.count_documents({
+        "created_by": current_user["id"],
+        "group_id": group_id
+    })
+    
+    return TaskGroupResponse(
+        id=group["_id"],
+        name=group["name"],
+        description=group.get("description"),
+        color=group.get("color", "#3B82F6"),
+        created_by=group["created_by"],
+        created_at=group["created_at"],
+        task_count=task_count
+    )
+
+@api_router.put("/task-groups/{group_id}", response_model=TaskGroupResponse)
+async def update_task_group(group_id: str, group: TaskGroupCreate, current_user: dict = Depends(get_current_user)):
+    """Update a task group"""
+    existing = await db.task_groups.find_one({"_id": group_id, "created_by": current_user["id"]})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Task group not found")
+    
+    await db.task_groups.update_one(
+        {"_id": group_id},
+        {"$set": {"name": group.name, "description": group.description, "color": group.color}}
+    )
+    
+    task_count = await db.tasks.count_documents({
+        "created_by": current_user["id"],
+        "group_id": group_id
+    })
+    
+    return TaskGroupResponse(
+        id=group_id,
+        name=group.name,
+        description=group.description,
+        color=group.color or "#3B82F6",
+        created_by=current_user["id"],
+        created_at=existing["created_at"],
+        task_count=task_count
+    )
+
+@api_router.delete("/task-groups/{group_id}")
+async def delete_task_group(group_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a task group (tasks will be ungrouped)"""
+    group = await db.task_groups.find_one({"_id": group_id, "created_by": current_user["id"]})
+    if not group:
+        raise HTTPException(status_code=404, detail="Task group not found")
+    
+    # Ungroup all tasks in this group
+    await db.tasks.update_many(
+        {"group_id": group_id},
+        {"$set": {"group_id": None}}
+    )
+    
+    await db.task_groups.delete_one({"_id": group_id})
+    
+    return {"message": "Task group deleted successfully"}
+
+@api_router.get("/task-groups/{group_id}/tasks", response_model=List[TaskResponse])
+async def get_tasks_in_group(group_id: str, current_user: dict = Depends(get_current_user)):
+    """Get all tasks in a specific group"""
+    group = await db.task_groups.find_one({"_id": group_id, "created_by": current_user["id"]})
+    if not group:
+        raise HTTPException(status_code=404, detail="Task group not found")
+    
+    tasks = await db.tasks.find({
+        "created_by": current_user["id"],
+        "group_id": group_id
+    }).to_list(1000)
+    
+    return [
+        TaskResponse(
+            id=task["_id"],
+            title=task["title"],
+            description=task.get("description"),
+            assignee_name=task.get("assignee_name"),
+            assignee_phone=task.get("assignee_phone"),
+            priority=task["priority"],
+            scheduled_date=task.get("scheduled_date"),
+            scheduled_time=task.get("scheduled_time"),
+            location_lat=task.get("location_lat"),
+            location_lng=task.get("location_lng"),
+            location_address=task.get("location_address"),
+            status=task["status"],
+            created_by=task["created_by"],
+            created_at=task["created_at"],
+            updated_at=task.get("updated_at"),
+            completed_at=task.get("completed_at"),
+            points_earned=task.get("points_earned"),
+            group_id=task.get("group_id"),
+            group_name=group["name"]
+        )
+        for task in tasks
+    ]
+
+# ==================== TASK ENDPOINTS ====================
+
 @api_router.post("/tasks", response_model=TaskResponse)
 async def create_task(task: TaskCreate, current_user: dict = Depends(get_current_user)):
     task_id = f"task_{datetime.now(timezone.utc).timestamp()}"

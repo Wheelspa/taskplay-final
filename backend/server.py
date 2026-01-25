@@ -48,7 +48,7 @@ class UserRegister(BaseModel):
 DISCOUNT_CODES = {
     "EARLYBIRD": {
         "discount_percent": 50,
-        "expires_at": datetime(2025, 2, 28, 23, 59, 59, tzinfo=timezone.utc),
+        "expires_at": datetime(2026, 6, 30, 23, 59, 59, tzinfo=timezone.utc),
         "description": "50% off Early Bird discount"
     }
 }

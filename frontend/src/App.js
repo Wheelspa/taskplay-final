@@ -38,6 +38,18 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+const PremiumRoute = ({ children, user }) => {
+  const token = getAuthToken();
+  if (!token) {
+    return <Navigate to="/auth" replace />;
+  }
+  // If user is basic, redirect to upgrade page
+  if (user && user.membership_type === "basic") {
+    return <Navigate to="/upgrade?feature=calendar" replace />;
+  }
+  return children;
+};
+
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -89,9 +101,9 @@ function App() {
           <Route
             path="/calendar"
             element={
-              <ProtectedRoute>
+              <PremiumRoute user={user}>
                 <CalendarView user={user} setUser={setUser} />
-              </ProtectedRoute>
+              </PremiumRoute>
             }
           />
           <Route

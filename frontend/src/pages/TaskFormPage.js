@@ -379,6 +379,43 @@ const TaskFormPage = ({ user, setUser }) => {
               </Select>
             </div>
 
+            <div className="md:col-span-2">
+              <Label htmlFor="group">TASK GROUP</Label>
+              <Select 
+                value={formData.group_id || "none"} 
+                onValueChange={(value) => setFormData({ ...formData, group_id: value === "none" ? null : value })}
+              >
+                <SelectTrigger className="mt-2" data-testid="task-group-select">
+                  <SelectValue placeholder="Select a group (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">
+                    <span className="flex items-center gap-2">
+                      <FolderOpen className="w-4 h-4 text-muted-foreground" />
+                      No Group
+                    </span>
+                  </SelectItem>
+                  {taskGroups.map((group) => (
+                    <SelectItem key={group.id} value={group.id}>
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: group.color }}
+                        />
+                        {group.name}
+                        <span className="text-xs text-muted-foreground">
+                          ({group.task_count} tasks)
+                        </span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                💡 Organize tasks into groups for better management. <span className="text-primary cursor-pointer hover:underline" onClick={() => navigate('/groups')}>Create new group</span>
+              </p>
+            </div>
+
             <div>
               <Label htmlFor="scheduled_date">SCHEDULED DATE</Label>
               <Input

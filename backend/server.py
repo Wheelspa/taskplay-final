@@ -42,6 +42,38 @@ class UserRegister(BaseModel):
     payment_order_id: Optional[str] = None
     payment_id: Optional[str] = None
     payment_signature: Optional[str] = None
+    discount_code: Optional[str] = None
+
+# Discount code configuration
+DISCOUNT_CODES = {
+    "EARLYBIRD": {
+        "discount_percent": 50,
+        "expires_at": datetime(2025, 2, 28, 23, 59, 59, tzinfo=timezone.utc),
+        "description": "50% off Early Bird discount"
+    }
+}
+
+def validate_discount_code(code: str) -> dict:
+    """Validate a discount code and return discount info if valid"""
+    if not code:
+        return None
+    
+    code_upper = code.upper().strip()
+    if code_upper not in DISCOUNT_CODES:
+        return {"valid": False, "error": "Invalid discount code"}
+    
+    code_info = DISCOUNT_CODES[code_upper]
+    now = datetime.now(timezone.utc)
+    
+    if now > code_info["expires_at"]:
+        return {"valid": False, "error": f"Discount code '{code_upper}' has expired"}
+    
+    return {
+        "valid": True,
+        "code": code_upper,
+        "discount_percent": code_info["discount_percent"],
+        "description": code_info["description"]
+    }
 
 class UserLogin(BaseModel):
     email: EmailStr

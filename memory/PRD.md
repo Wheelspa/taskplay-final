@@ -6,12 +6,15 @@ Build a comprehensive task management application named "TaskPro" with:
 - Task priorities including "Super Important" with popup alerts
 - Click-to-call phone integration
 - Interactive map location picker with search
-- Paid account creation via Razorpay (currently mocked)
+- Paid account creation via Razorpay (currently MOCKED)
 - WhatsApp messaging for tasks (planned)
 - Points-based scoring system with achievements
 - Penalty system for delayed tasks
 - Automatic monthly task clearing
 - Calendar view for task overview
+- Team collaboration features
+- Voice command task creation
+- Task groups for organization
 
 ## Tech Stack
 - **Backend:** FastAPI + MongoDB (motor)
@@ -19,94 +22,105 @@ Build a comprehensive task management application named "TaskPro" with:
 - **Maps:** Leaflet (react-leaflet)
 - **Calendar:** react-day-picker (via Shadcn Calendar)
 - **Auth:** JWT-based authentication
+- **Voice:** Web Speech API (browser native)
 
 ## Current Status
-**Last Updated:** January 12, 2026
+**Last Updated:** January 25, 2026
 
 ### Completed Features ✅
-1. **User Authentication**
-   - Registration with membership plan selection
-   - Two membership tiers: Basic and Premium
-   - Monthly and Yearly billing options
-   - JWT-based login/logout
-   - Protected routes
 
-2. **Membership Plans**
-   - **Basic Monthly**: ₹90/month (50 tasks/month, Basic analytics, Email support)
-   - **Basic Yearly**: ₹499/year (Save ₹581)
-   - **Premium Monthly**: ₹180/month (Unlimited tasks, Advanced analytics, Team collaboration, Priority support, Custom reports, Calendar view, API access)
-   - **Premium Yearly**: ₹999/year (Save ₹1,161)
-   - Mock payment for testing (Razorpay integration ready)
-   - **Discount Code**: EARLYBIRD - 50% off (Expires Feb 28, 2025)
-   - Membership status displayed on dashboard with expiration date
+#### 1. User Authentication & Membership
+- Registration with membership plan selection
+- Two membership tiers: Basic and Premium
+- Monthly and Yearly billing options
+- JWT-based login/logout
+- Protected routes
+- **Premium-only route protection** (Calendar restricted for Basic users)
 
-2. **Task Management**
-   - Full CRUD operations
-   - Priority levels: low, medium, high, super_important
-   - Status tracking: pending, in_progress, completed
-   - Scheduled date and time slots
-   - Location picker with interactive map and search
-   - Click-to-call phone links
-   - Assignee information
+#### 2. Membership Plans
+| Plan | Monthly | Yearly | Features |
+|------|---------|--------|----------|
+| Basic | ₹90/month | ₹499/year | 50 tasks/month, Basic analytics, Email support |
+| Premium | ₹180/month | ₹999/year | Unlimited tasks, Advanced analytics, Team collaboration, Priority support, Custom reports, Calendar view, API access |
 
-3. **Scoring System**
-   - Points awarded on task completion (2-5 based on priority)
-   - Daily, monthly, and all-time score tracking
-   - -5 penalty for tasks delayed >3 days
+- **Payment:** MOCKED (Razorpay integration ready, USE_MOCK_PAYMENT=true)
+- **Discount Code:** EARLYBIRD - 50% off (Backend validated, expires Jun 30, 2026)
+- Membership status displayed on dashboard with expiration date
 
-4. **Achievement System**
-   - Bronze badge at 25 monthly points
-   - Silver badge at 50 monthly points
-   - Gold badge at 75 monthly points
-   - Platinum badge at 100 monthly points
-   - Celebration modal on achievement unlock
+#### 3. Task Management
+- Full CRUD operations
+- Priority levels: low, medium, high, super_important
+- Status tracking: pending, in_progress, completed
+- Scheduled date and time slots
+- Location picker with interactive map and search
+- Click-to-call phone links
+- Assignee information
+- **Task Groups** - Organize tasks into color-coded groups
 
-5. **UI Features**
-   - Super Important task popup alerts
-   - Quick status change from dashboard
-   - Auto-delete completed tasks
-   - "Add Task" button in main navigation
-   - Autocomplete suggestions from previous tasks
+#### 4. Task Groups Feature ✅ (NEW)
+- Create, edit, delete task groups
+- Color-coded groups (8 colors available)
+- Task count per group
+- Group selection dropdown in task creation form
+- View tasks by group
+- Tasks ungrouped (not deleted) when group is deleted
 
-6. **Automatic Monthly Cleanup**
-   - All tasks cleared at start of each month
-   - Runs on server startup on day 1
+#### 5. Voice Command Task Creation ✅ (NEW)
+- Voice input via Web Speech API
+- Frontend NLP parsing for:
+  - Priority detection (super important, high, low)
+  - Date detection (today, tomorrow, next week)
+  - Group detection (matches existing group names)
+- Task preview/edit before creation
+- Example commands provided in UI
 
-7. **Calendar View** (NEW)
-   - Full month calendar with task indicators
-   - Color-coded dots for priorities (red=super important, orange=high, blue=pending, green=completed)
-   - Click any date to see tasks for that day
-   - Priority filter dropdown
-   - "TODAY" button for quick navigation
-   - Monthly overview stats panel
-   - Task summary for selected date
+#### 6. Scoring System
+- Points awarded on task completion (2-5 based on priority)
+- Daily, monthly, and all-time score tracking
+- -5 penalty for tasks delayed >3 days
 
-### Removed Features
-- Manual "Clear Completed Tasks" button (per user request - tasks now auto-clear)
+#### 7. Achievement System
+- Bronze badge at 25 monthly points
+- Silver badge at 50 monthly points
+- Gold badge at 75 monthly points
+- Platinum badge at 100 monthly points
+- Celebration modal on achievement unlock
 
-## Page Structure
+#### 8. Calendar View (Premium Only) ✅
+- Full month calendar with task indicators
+- Color-coded dots for priorities
+- Click any date to see tasks for that day
+- Priority filter dropdown
+- "TODAY" button for quick navigation
+- **Basic users redirected to /upgrade?feature=calendar**
 
-### Routes
-- `/` - Landing page
-- `/auth` - Login/Register
-- `/dashboard` - Main dashboard with stats and recent tasks
-- `/calendar` - Calendar view of all tasks
-- `/teams` - Team listing and creation
-- `/teams/:teamId` - Team detail with members and tasks
-- `/tasks` - Task list page
-- `/tasks/new` - Create new task
-- `/tasks/:id` - Task detail
-- `/tasks/:id/edit` - Edit task
+#### 9. Team Collaboration (MVP)
+- Create and view teams
+- View team members
+- Add/remove team members (owner/admin only)
+- Role-based permissions (Owner, Admin, Member)
 
-## API Endpoints
+#### 10. UI Features
+- Super Important task popup alerts
+- Quick status change from dashboard
+- Auto-delete completed tasks
+- "Add Task" button in main navigation
+- Autocomplete suggestions from previous tasks
+- Brand ambassador imagery across app
 
-### Authentication
-- `POST /api/auth/register` - User registration
+#### 11. Automatic Monthly Cleanup
+- All tasks cleared at start of each month
+- Runs on server startup on day 1
+
+### API Endpoints
+
+#### Authentication
+- `POST /api/auth/register` - User registration with membership
 - `POST /api/auth/login` - User login
 - `GET /api/auth/me` - Get current user
 
-### Tasks
-- `GET /api/tasks` - List tasks (with status/priority filters)
+#### Tasks
+- `GET /api/tasks` - List tasks (with filters)
 - `POST /api/tasks` - Create task
 - `GET /api/tasks/{id}` - Get single task
 - `PUT /api/tasks/{id}` - Update task
@@ -115,7 +129,15 @@ Build a comprehensive task management application named "TaskPro" with:
 - `GET /api/tasks/stats/scores` - Score and achievements
 - `GET /api/tasks/suggestions` - Autocomplete data
 
-### Teams
+#### Task Groups
+- `GET /api/task-groups` - List user's groups
+- `POST /api/task-groups` - Create group
+- `GET /api/task-groups/{id}` - Get group
+- `PUT /api/task-groups/{id}` - Update group
+- `DELETE /api/task-groups/{id}` - Delete group
+- `GET /api/task-groups/{id}/tasks` - Get tasks in group
+
+#### Teams
 - `GET /api/teams` - List user's teams
 - `POST /api/teams` - Create a team
 - `GET /api/teams/{id}` - Get team details
@@ -125,57 +147,39 @@ Build a comprehensive task management application named "TaskPro" with:
 - `DELETE /api/teams/{id}/members/{userId}` - Remove member
 - `GET /api/teams/{id}/tasks` - Get team tasks
 
-### Payments (Mocked)
+#### Payments & Membership
 - `POST /api/payment/create-order` - Create payment order
 - `POST /api/payment/verify` - Verify payment
+- `GET /api/membership/plans` - Get available plans
+- `POST /api/membership/upgrade` - Upgrade membership
+- `POST /api/discount/validate` - Validate discount code
 
-## Database Schema
+### Page Structure
 
-### users
-```json
-{
-  "_id": "user_xxx",
-  "email": "string",
-  "password": "hashed",
-  "name": "string",
-  "phone": "string",
-  "is_paid": "boolean",
-  "created_at": "datetime"
-}
-```
-
-### tasks
-```json
-{
-  "_id": "task_xxx",
-  "title": "string",
-  "description": "string",
-  "priority": "low|medium|high|super_important",
-  "status": "pending|in_progress|completed",
-  "scheduled_date": "YYYY-MM-DD",
-  "scheduled_time": "HH:MM",
-  "assignee_name": "string",
-  "assignee_phone": "string",
-  "location_lat": "float",
-  "location_lng": "float",
-  "location_address": "string",
-  "created_by": "user_id",
-  "created_at": "datetime",
-  "completed_at": "datetime",
-  "points_earned": "int",
-  "penalty_applied": "boolean",
-  "penalty_points": "int"
-}
-```
+| Route | Description | Access |
+|-------|-------------|--------|
+| `/` | Landing page | Public |
+| `/auth` | Login/Register | Public |
+| `/dashboard` | Main dashboard | Auth |
+| `/calendar` | Calendar view | Premium only |
+| `/teams` | Team listing | Auth |
+| `/teams/:teamId` | Team detail | Auth |
+| `/groups` | Task groups | Auth |
+| `/tasks` | Task list | Auth |
+| `/tasks/new` | Create task | Auth |
+| `/tasks/:id` | Task detail | Auth |
+| `/tasks/:id/edit` | Edit task | Auth |
+| `/upgrade` | Membership upgrade | Auth |
 
 ## Upcoming Tasks (P1)
 
-### Team Collaboration Feature
+### Full Team Collaboration Feature
 Technical specs available in `/app/TEAM_COLLABORATION_SPECS.md`
-- Team creation and member management
-- Role-based permissions (Owner, Admin, Member)
-- Assign tasks to teams
-- Team dashboard
+- Task assignment to team members
+- Subtasks
+- Comments with @mentions
+- Activity log
+- Team-based analytics
 
 ## Backlog (P2-P3)
 
@@ -183,7 +187,7 @@ Technical specs available in `/app/TEAM_COLLABORATION_SPECS.md`
 - Real Razorpay payment integration
 - Task comments and @mentions
 - Team activity logs
-- Team-based analytics
+- Backend refactoring (split server.py into routers)
 
 ### P3 - Low Priority
 - WhatsApp integration for notifications
@@ -192,11 +196,11 @@ Technical specs available in `/app/TEAM_COLLABORATION_SPECS.md`
 - Dark mode theme
 
 ## Known Limitations
-1. **Payment Gateway:** Currently mocked. Real Razorpay keys needed for production.
-2. **Notifications:** WhatsApp integration not yet implemented.
-3. **Backend Structure:** server.py is large (650+ lines), consider refactoring into modules.
+1. **Payment Gateway:** MOCKED. Real Razorpay keys needed for production.
+2. **Notifications:** WhatsApp integration not implemented.
+3. **Backend Structure:** server.py is large (~1300 lines), consider refactoring into modules.
 
 ## Test Credentials
 - Create new user via registration UI
 - Mock payment auto-approves with any details
-- Test user: newtest@test.com / Test123!
+- Discount code: EARLYBIRD (50% off, valid until Jun 30, 2026)

@@ -101,8 +101,8 @@ const UpgradePage = ({ user, setUser }) => {
     let finalPrice = basePlan.price;
     let finalAmount = basePlan.amount;
     
-    if (discountApplied && VALID_DISCOUNT_CODES[discountCode.toUpperCase()]) {
-      const discountPercent = VALID_DISCOUNT_CODES[discountCode.toUpperCase()].discount;
+    if (discountApplied) {
+      const discountPercent = 50; // From EARLYBIRD
       finalPrice = Math.round(basePlan.price * (1 - discountPercent / 100));
       finalAmount = Math.round(basePlan.amount * (1 - discountPercent / 100));
     }
@@ -115,20 +115,6 @@ const UpgradePage = ({ user, setUser }) => {
       type: planType,
       cycle: cycle
     };
-  };
-
-  const applyDiscountCode = () => {
-    const code = discountCode.toUpperCase().trim();
-    const validation = isDiscountCodeValid(code);
-    
-    if (validation.valid) {
-      setDiscountApplied(true);
-      setDiscountError("");
-      toast.success(`🎉 ${validation.discountInfo.label} applied!`);
-    } else {
-      setDiscountApplied(false);
-      setDiscountError(validation.reason);
-    }
   };
 
   const removeDiscount = () => {

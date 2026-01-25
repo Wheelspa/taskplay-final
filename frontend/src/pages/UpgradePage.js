@@ -401,18 +401,18 @@ const UpgradePage = ({ user, setUser }) => {
                   type="button"
                   variant="outline"
                   onClick={applyDiscountCode}
-                  disabled={!discountCode.trim()}
+                  disabled={!discountCode.trim() || validatingCode}
                 >
-                  Apply
+                  {validatingCode ? "Validating..." : "Apply"}
                 </Button>
               )}
             </div>
             {discountError && (
               <p className="text-red-500 text-xs mt-1">{discountError}</p>
             )}
-            {discountApplied && VALID_DISCOUNT_CODES[discountCode.toUpperCase()] && (
+            {discountApplied && (
               <p className="text-green-600 text-xs mt-1 font-medium">
-                ✓ {VALID_DISCOUNT_CODES[discountCode.toUpperCase()].label}
+                ✓ 50% OFF - Early Bird Offer applied!
               </p>
             )}
             <p className="text-xs text-muted-foreground mt-2">

@@ -418,6 +418,14 @@ async def get_membership_plans():
         ]
     }
 
+@api_router.post("/discount/validate")
+async def validate_discount(code: str):
+    """Validate a discount code and return discount info"""
+    result = validate_discount_code(code)
+    if not result:
+        return {"valid": False, "error": "No discount code provided"}
+    return result
+
 @api_router.post("/auth/register", response_model=Token)
 async def register(user: UserRegister):
     existing_user = await db.users.find_one({"email": user.email})

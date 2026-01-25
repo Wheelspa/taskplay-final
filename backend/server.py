@@ -71,6 +71,21 @@ MEMBERSHIP_PLANS = {
     "premium_yearly": {"type": "premium", "plan": "yearly", "amount": 99900, "display": "₹999/year"}
 }
 
+# Task Group Models
+class TaskGroupCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    color: Optional[str] = "#3B82F6"  # Default blue color
+
+class TaskGroupResponse(BaseModel):
+    id: str
+    name: str
+    description: Optional[str] = None
+    color: str
+    created_by: str
+    created_at: str
+    task_count: Optional[int] = 0
+
 class TaskCreate(BaseModel):
     title: str
     description: Optional[str] = None
@@ -83,6 +98,7 @@ class TaskCreate(BaseModel):
     location_lng: Optional[float] = None
     location_address: Optional[str] = None
     status: str = "pending"
+    group_id: Optional[str] = None  # Task group
 
 class TaskUpdate(BaseModel):
     title: Optional[str] = None
@@ -98,6 +114,7 @@ class TaskUpdate(BaseModel):
     status: Optional[str] = None
     completed_at: Optional[str] = None
     points_earned: Optional[int] = None
+    group_id: Optional[str] = None
 
 class TaskResponse(BaseModel):
     id: str
@@ -118,6 +135,8 @@ class TaskResponse(BaseModel):
     completed_at: Optional[str] = None
     points_earned: Optional[int] = None
     team_id: Optional[str] = None
+    group_id: Optional[str] = None
+    group_name: Optional[str] = None
     assigned_to: Optional[List[str]] = None
 
 class TeamCreate(BaseModel):

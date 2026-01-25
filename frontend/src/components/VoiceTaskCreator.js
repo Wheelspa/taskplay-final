@@ -291,12 +291,12 @@ const VoiceTaskCreator = ({ open, onOpenChange, onTaskCreated, groups = [] }) =>
                   {isProcessing ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Processing...
+                      Creating Task...
                     </>
                   ) : (
                     <>
                       <Wand2 className="w-4 h-4 mr-2" />
-                      Create Task
+                      Save Task
                     </>
                   )}
                 </Button>

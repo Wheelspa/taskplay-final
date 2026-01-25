@@ -11,8 +11,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ListTodo, Calendar, CalendarDays, Clock, CheckCircle2, AlertCircle, LogOut, Plus, Bell, X, Trophy, Target, TrendingUp, Award, Sparkles, Users, Crown, Zap, CreditCard } from "lucide-react";
+import { ListTodo, Calendar, CalendarDays, Clock, CheckCircle2, AlertCircle, LogOut, Plus, Bell, X, Trophy, Target, TrendingUp, Award, Sparkles, Users, Crown, Zap, CreditCard, Mic, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
+import VoiceTaskCreator from "../components/VoiceTaskCreator";
 
 const Dashboard = ({ user, setUser }) => {
   const navigate = useNavigate();
@@ -25,6 +26,22 @@ const Dashboard = ({ user, setUser }) => {
   const [showAchievement, setShowAchievement] = useState(false);
   const [newAchievement, setNewAchievement] = useState(null);
   const [previousScore, setPreviousScore] = useState(0);
+  const [showVoiceCreator, setShowVoiceCreator] = useState(false);
+  const [taskGroups, setTaskGroups] = useState([]);
+
+  useEffect(() => {
+    fetchDashboardData();
+    fetchTaskGroups();
+  }, []);
+
+  const fetchTaskGroups = async () => {
+    try {
+      const response = await axios.get(`${API}/task-groups`);
+      setTaskGroups(response.data);
+    } catch (error) {
+      console.error("Failed to fetch groups");
+    }
+  };
 
   useEffect(() => {
     fetchDashboardData();

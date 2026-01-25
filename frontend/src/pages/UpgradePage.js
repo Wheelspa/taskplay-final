@@ -416,7 +416,7 @@ const UpgradePage = ({ user, setUser }) => {
               </p>
             )}
             <p className="text-xs text-muted-foreground mt-2">
-              🎁 <strong>EARLYBIRD</strong> - 50% off! Expires Feb 28, 2025
+              🎁 <strong>EARLYBIRD</strong> - 50% off! Expires Jun 30, 2026
             </p>
           </div>
 

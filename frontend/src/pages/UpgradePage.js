@@ -236,6 +236,34 @@ const UpgradePage = ({ user, setUser }) => {
           Back to Dashboard
         </Button>
 
+        {/* Premium Feature Request Message */}
+        {featureRequested && (
+          <div className="bg-purple-50 border-2 border-purple-500 rounded-sm p-4 mb-6 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-bold text-purple-900 mb-1">Premium Feature Required</h3>
+              <p className="text-sm text-purple-700">
+                {featureRequested === "calendar" && (
+                  <>
+                    <CalendarDays className="w-4 h-4 inline mr-1" />
+                    The <strong>Calendar View</strong> is a Premium-only feature. Upgrade to Premium to access your tasks in a calendar format and plan your schedule more effectively.
+                  </>
+                )}
+                {featureRequested === "teams" && (
+                  <>
+                    Team collaboration features require a Premium subscription.
+                  </>
+                )}
+                {!["calendar", "teams"].includes(featureRequested) && (
+                  <>
+                    This feature requires a Premium subscription to access.
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold tracking-tight mb-2" data-testid="upgrade-heading">
             UPGRADE YOUR PLAN

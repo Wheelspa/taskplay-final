@@ -119,6 +119,14 @@ function App() {
             }
           />
           <Route
+            path="/groups"
+            element={
+              <ProtectedRoute>
+                <TaskGroupsPage user={user} setUser={setUser} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/tasks"
             element={
               <ProtectedRoute>

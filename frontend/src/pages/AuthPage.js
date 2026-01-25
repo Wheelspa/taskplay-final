@@ -38,8 +38,8 @@ const AuthPage = ({ setUser }) => {
     "EARLYBIRD": { 
       discount: 50, 
       label: "50% OFF - Early Bird Offer!",
-      expiresAt: new Date("2025-02-28T23:59:59"), // Valid until Feb 28, 2025
-      description: "Limited time offer - Expires Feb 28, 2025"
+      expiresAt: new Date("2026-06-30T23:59:59"), // Valid until Jun 30, 2026
+      description: "Limited time offer - Expires Jun 30, 2026"
     }
   };
 

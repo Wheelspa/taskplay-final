@@ -179,14 +179,16 @@ const TaskGroupsPage = ({ user, setUser }) => {
                 <LayoutDashboard className="w-4 h-4 mr-2" />
                 DASHBOARD
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/calendar")}
-                data-testid="calendar-btn"
-              >
-                <CalendarDays className="w-4 h-4 mr-2" />
-                CALENDAR
-              </Button>
+              {user?.membership_type !== "basic" && (
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/calendar")}
+                  data-testid="calendar-btn"
+                >
+                  <CalendarDays className="w-4 h-4 mr-2" />
+                  CALENDAR
+                </Button>
+              )}
               <Button variant="ghost" onClick={handleLogout}>
                 <LogOut className="w-4 h-4" />
               </Button>

@@ -790,104 +790,104 @@ const Dashboard = ({ user, setUser }) => {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-medium tracking-tight" data-testid="recent-tasks-heading">RECENT TASKS</h3>
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => navigate("/tasks/new")}
-                  data-testid="create-task-btn"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  NEW TASK
-                </Button>
-              </div>
+        {/* Date-Based Task Groups */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-2xl font-medium tracking-tight" data-testid="grouped-tasks-heading">MY TASKS</h3>
+            <Button
+              onClick={() => navigate("/tasks/new")}
+              data-testid="create-task-btn"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              NEW TASK
+            </Button>
+          </div>
+
+          {Object.values(groupedTasks).every(g => g.tasks.length === 0) ? (
+            <div className="border border-border bg-secondary p-12 rounded-sm text-center" data-testid="no-tasks-message">
+              <p className="text-muted-foreground">No tasks yet. Create your first task to get started.</p>
             </div>
-            
-            {recentTasks.length === 0 ? (
-              <div className="border border-border bg-secondary p-12 rounded-sm text-center" data-testid="no-tasks-message">
-                <p className="text-muted-foreground">No tasks yet. Create your first task to get started.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {recentTasks.map((task) => {
-                  const taskScore = getTaskScore(task.status);
-                  return (
-                    <div
-                      key={task.id}
-                      className="border border-border bg-background p-6 rounded-sm hover:border-primary/50 transition-colors"
-                      data-testid={`task-item-${task.id}`}
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex-1">
-                          <h4 
-                            className="text-lg font-medium cursor-pointer hover:text-primary"
-                            onClick={() => navigate(`/tasks/${task.id}`)}
-                          >
-                            {task.title}
-                          </h4>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className={`text-xs uppercase tracking-wider font-medium ${getPriorityColor(task.priority)}`}>
-                            {task.priority === "super_important" ? "🔥 SUPER IMPORTANT" : task.priority}
-                          </span>
-                          <div className="flex items-center gap-2 px-3 py-1 rounded-sm border border-border bg-secondary">
-                            <div className="flex items-center gap-1">
-                              <span className={`text-sm font-bold ${taskScore.color}`}>{taskScore.score}</span>
-                              <span className="text-xs text-muted-foreground">/10</span>
-                            </div>
-                            <div className="w-16 bg-muted rounded-full h-1.5">
-                              <div 
-                                className={`${taskScore.bgColor} h-1.5 rounded-full transition-all`}
-                                style={{ width: `${taskScore.score * 10}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      {task.description && (
-                        <p className="text-sm text-muted-foreground mb-3">{task.description}</p>
-                      )}
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                          {task.scheduled_date && (
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              {task.scheduled_date}
-                            </span>
-                          )}
-                          {task.assignee_name && (
-                            <span>Assigned to: {task.assignee_name}</span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-muted-foreground uppercase tracking-wide">STATUS:</span>
-                          <Select 
-                            value={task.status} 
-                            onValueChange={(value) => handleStatusChange(task.id, value)}
-                          >
-                            <SelectTrigger 
-                              className="w-36 h-8 text-xs uppercase"
-                              data-testid={`status-select-${task.id}`}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="in_progress">In Progress</SelectItem>
-                              <SelectItem value="completed">Completed</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
+          ) : (
+            <div className="space-y-6">
+              {Object.entries(groupedTasks).map(([key, group]) => {
+                if (group.tasks.length === 0) return null;
+                return (
+                  <div key={key} className={`border-2 rounded-sm overflow-hidden ${group.color}`} data-testid={`task-group-${key}`}>
+                    <div className="px-4 py-3 border-b bg-white/50 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">{group.icon}</span>
+                        <h4 className="font-bold uppercase tracking-wide">{group.label}</h4>
+                        <span className="text-sm text-muted-foreground">({group.tasks.length})</span>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                    <div className="divide-y divide-border bg-background">
+                      {group.tasks.map((task) => {
+                        const taskScore = getTaskScore(task.status);
+                        return (
+                          <div
+                            key={task.id}
+                            className="p-4 hover:bg-secondary/50 transition-colors"
+                            data-testid={`task-item-${task.id}`}
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="flex-1">
+                                <h5 
+                                  className="font-medium cursor-pointer hover:text-primary"
+                                  onClick={() => navigate(`/tasks/${task.id}`)}
+                                >
+                                  {task.title}
+                                </h5>
+                                {task.description && (
+                                  <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{task.description}</p>
+                                )}
+                              </div>
+                              <span className={`text-xs uppercase tracking-wider font-medium ml-4 ${getPriorityColor(task.priority)}`}>
+                                {task.priority === "super_important" ? "🔥 SUPER" : task.priority}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                {task.scheduled_date && (
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" />
+                                    {task.scheduled_date} {task.scheduled_time && `at ${task.scheduled_time}`}
+                                  </span>
+                                )}
+                                {task.assignee_name && (
+                                  <span>→ {task.assignee_name}</span>
+                                )}
+                              </div>
+                              <Select 
+                                value={task.status} 
+                                onValueChange={(value) => handleStatusChange(task.id, value)}
+                              >
+                                <SelectTrigger 
+                                  className="w-32 h-7 text-xs uppercase"
+                                  data-testid={`status-select-${task.id}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">Pending</SelectItem>
+                                  <SelectItem value="in_progress">In Progress</SelectItem>
+                                  <SelectItem value="completed">Completed</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
 
           <div>
             <h3 className="text-2xl font-medium tracking-tight mb-6" data-testid="quick-actions-heading">QUICK ACTIONS</h3>

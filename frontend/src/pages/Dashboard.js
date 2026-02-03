@@ -136,6 +136,10 @@ const Dashboard = ({ user, setUser }) => {
       const sortedTasks = sortTasks(tasksResponse.data);
       setRecentTasks(sortedTasks.slice(0, 10));
       
+      // Group tasks by date
+      const grouped = groupTasksByDate(tasksResponse.data);
+      setGroupedTasks(grouped);
+      
       const newScores = scoresResponse.data;
       
       // Check if a new milestone was reached

@@ -19,6 +19,7 @@ const Dashboard = ({ user, setUser }) => {
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [recentTasks, setRecentTasks] = useState([]);
+  const [groupedTasks, setGroupedTasks] = useState({});
   const [loading, setLoading] = useState(true);
   const [showCriticalAlert, setShowCriticalAlert] = useState(false);
   const [criticalTasks, setCriticalTasks] = useState([]);
@@ -43,9 +44,61 @@ const Dashboard = ({ user, setUser }) => {
     }
   };
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  // Group tasks by date
+  const groupTasksByDate = (tasks) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const nextWeekStart = new Date(today);
+    nextWeekStart.setDate(nextWeekStart.getDate() + 2);
+    
+    const nextWeekEnd = new Date(today);
+    nextWeekEnd.setDate(nextWeekEnd.getDate() + 7);
+
+    const groups = {
+      overdue: { label: "Overdue", icon: "🔴", tasks: [], color: "border-red-500 bg-red-50" },
+      today: { label: "Today's Tasks", icon: "📅", tasks: [], color: "border-blue-500 bg-blue-50" },
+      tomorrow: { label: "Tomorrow", icon: "⏰", tasks: [], color: "border-orange-500 bg-orange-50" },
+      thisWeek: { label: "This Week", icon: "📆", tasks: [], color: "border-purple-500 bg-purple-50" },
+      later: { label: "Later", icon: "📋", tasks: [], color: "border-gray-400 bg-gray-50" },
+      noDate: { label: "No Date Set", icon: "❓", tasks: [], color: "border-gray-300 bg-gray-50" }
+    };
+
+    tasks.forEach(task => {
+      // Skip completed tasks
+      if (task.status === "completed") return;
+      
+      if (!task.scheduled_date) {
+        groups.noDate.tasks.push(task);
+        return;
+      }
+
+      const taskDate = new Date(task.scheduled_date);
+      taskDate.setHours(0, 0, 0, 0);
+
+      if (taskDate < today) {
+        groups.overdue.tasks.push(task);
+      } else if (taskDate.getTime() === today.getTime()) {
+        groups.today.tasks.push(task);
+      } else if (taskDate.getTime() === tomorrow.getTime()) {
+        groups.tomorrow.tasks.push(task);
+      } else if (taskDate <= nextWeekEnd) {
+        groups.thisWeek.tasks.push(task);
+      } else {
+        groups.later.tasks.push(task);
+      }
+    });
+
+    // Sort tasks within each group by priority
+    Object.keys(groups).forEach(key => {
+      groups[key].tasks = sortTasks(groups[key].tasks);
+    });
+
+    return groups;
+  };
 
   // Priority order for sorting (lower number = higher priority)
   const priorityOrder = {

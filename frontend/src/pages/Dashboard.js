@@ -886,51 +886,48 @@ const Dashboard = ({ user, setUser }) => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
-
-          <div>
-            <h3 className="text-2xl font-medium tracking-tight mb-6" data-testid="quick-actions-heading">QUICK ACTIONS</h3>
-            <div className="space-y-4">
-              <Button
-                variant="outline"
-                className="w-full justify-start h-auto py-4"
-                onClick={() => navigate("/tasks/new")}
-                data-testid="quick-new-task-btn"
-              >
-                <Plus className="w-5 h-5 mr-3" />
-                <div className="text-left">
-                  <div className="font-medium">CREATE NEW TASK</div>
-                  <div className="text-xs text-muted-foreground">Add a new task with details</div>
-                </div>
-              </Button>
-              
-              <Button
-                variant="outline"
-                className="w-full justify-start h-auto py-4"
-                onClick={() => navigate("/tasks?status=pending")}
-                data-testid="quick-view-pending-btn"
-              >
-                <Clock className="w-5 h-5 mr-3" />
-                <div className="text-left">
-                  <div className="font-medium">VIEW PENDING TASKS</div>
-                  <div className="text-xs text-muted-foreground">See all pending tasks</div>
-                </div>
-              </Button>
-              
-              <Button
-                variant="outline"
-                className="w-full justify-start h-auto py-4"
-                onClick={() => navigate("/tasks?priority=high")}
-                data-testid="quick-view-high-priority-btn"
-              >
-                <AlertCircle className="w-5 h-5 mr-3" />
-                <div className="text-left">
-                  <div className="font-medium">HIGH PRIORITY TASKS</div>
-                  <div className="text-xs text-muted-foreground">Focus on urgent tasks</div>
-                </div>
-              </Button>
-            </div>
+        {/* Quick Actions Section */}
+        <div className="mt-8">
+          <h3 className="text-2xl font-medium tracking-tight mb-6" data-testid="quick-actions-heading">QUICK ACTIONS</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Button
+              variant="outline"
+              className="justify-start h-auto py-4"
+              onClick={() => navigate("/tasks/new")}
+              data-testid="quick-new-task-btn"
+            >
+              <Plus className="w-5 h-5 mr-3" />
+              <div className="text-left">
+                <div className="font-medium">CREATE NEW TASK</div>
+                <div className="text-xs text-muted-foreground">Add a new task with details</div>
+              </div>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="justify-start h-auto py-4"
+              onClick={() => navigate("/tasks?status=pending")}
+              data-testid="quick-view-pending-btn"
+            >
+              <Clock className="w-5 h-5 mr-3" />
+              <div className="text-left">
+                <div className="font-medium">VIEW PENDING TASKS</div>
+                <div className="text-xs text-muted-foreground">See all pending tasks</div>
+              </div>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="justify-start h-auto py-4"
+              onClick={() => navigate("/tasks?priority=high")}
+              data-testid="quick-view-high-priority-btn"
+            >
+              <AlertCircle className="w-5 h-5 mr-3" />
+              <div className="text-left">
+                <div className="font-medium">HIGH PRIORITY TASKS</div>
+                <div className="text-xs text-muted-foreground">Focus on urgent tasks</div>
+              </div>
+            </Button>
           </div>
         </div>
           </div>

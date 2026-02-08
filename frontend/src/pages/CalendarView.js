@@ -351,9 +351,11 @@ const CalendarView = ({ user, setUser }) => {
               {/* Legend */}
               <div className="flex items-center justify-center gap-6 mt-6 pt-4 border-t border-border">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                  <div className="w-6 h-6 rounded-sm bg-red-500 flex items-center justify-center">
+                    <Flame className="w-3 h-3 text-white" />
+                  </div>
                   <span className="text-xs text-muted-foreground">
-                    Super Important
+                    Super Important (Full Block)
                   </span>
                 </div>
                 <div className="flex items-center gap-2">

@@ -363,31 +363,33 @@ const CalendarView = ({ user, setUser }) => {
               />
 
               {/* Legend */}
-              <div className="flex items-center justify-center gap-6 mt-6 pt-4 border-t border-border">
+              <div className="flex items-center justify-center gap-6 mt-6 pt-4 border-t border-border flex-wrap">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-sm bg-red-500 flex items-center justify-center">
                     <Flame className="w-3 h-3 text-white" />
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    Super Important (Full Block)
+                    Super Important / High
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-orange-500" />
+                  <div className="w-6 h-6 rounded-sm bg-orange-500" />
                   <span className="text-xs text-muted-foreground">
-                    High Priority
+                    Medium Priority
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-blue-500" />
+                  <div className="w-6 h-6 rounded-sm bg-blue-500" />
                   <span className="text-xs text-muted-foreground">
-                    Pending/In Progress
+                    Low Priority
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-green-500" />
+                  <div className="w-6 h-6 rounded-sm bg-green-100 border border-green-300 flex items-center justify-center">
+                    <span className="text-green-800 text-xs">✓</span>
+                  </div>
                   <span className="text-xs text-muted-foreground">
-                    Completed
+                    All Completed
                   </span>
                 </div>
               </div>

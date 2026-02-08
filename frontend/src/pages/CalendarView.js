@@ -93,52 +93,66 @@ const CalendarView = ({ user, setUser }) => {
 
   const tasksMap = getDatesWithTasks();
 
-  // Check if a date has super important tasks
-  const hasSuperImportantTask = (date) => {
-    const dateStr = formatDateLocal(date);
-    const dayTasks = tasksMap[dateStr] || [];
-    return dayTasks.some((t) => t.priority === "super_important" && t.status !== "completed");
+  // Get the highest priority for a date (for block coloring)
+  const getHighestPriority = (dayTasks) => {
+    if (dayTasks.some((t) => t.priority === "super_important" && t.status !== "completed")) {
+      return "super_important";
+    }
+    if (dayTasks.some((t) => t.priority === "high" && t.status !== "completed")) {
+      return "high";
+    }
+    if (dayTasks.some((t) => t.priority === "medium" && t.status !== "completed")) {
+      return "medium";
+    }
+    if (dayTasks.some((t) => t.priority === "low" && t.status !== "completed")) {
+      return "low";
+    }
+    // All completed
+    return "completed";
+  };
+
+  // Get block color classes based on priority
+  const getBlockColor = (priority) => {
+    switch (priority) {
+      case "super_important":
+      case "high":
+        return "bg-red-500 text-white";
+      case "medium":
+        return "bg-orange-500 text-white";
+      case "low":
+        return "bg-blue-500 text-white";
+      case "completed":
+        return "bg-green-100 text-green-800";
+      default:
+        return "";
+    }
   };
 
   // Custom day content renderer
   const renderDay = (day) => {
     const dateStr = formatDateLocal(day);
     const dayTasks = tasksMap[dateStr] || [];
-    const hasSuperImportant = dayTasks.some(
-      (t) => t.priority === "super_important" && t.status !== "completed"
-    );
-    const hasHigh = dayTasks.some((t) => t.priority === "high" && t.status !== "completed");
-    const hasCompleted = dayTasks.some((t) => t.status === "completed");
-    const hasPending = dayTasks.some(
-      (t) => t.status === "pending" || t.status === "in_progress"
-    );
+    
+    if (dayTasks.length === 0) {
+      return (
+        <div className="relative w-full h-full flex flex-col items-center justify-center">
+          <span>{day.getDate()}</span>
+        </div>
+      );
+    }
+
+    const highestPriority = getHighestPriority(dayTasks);
+    const blockColor = getBlockColor(highestPriority);
+    const hasSuperImportant = highestPriority === "super_important";
+    const pendingCount = dayTasks.filter(t => t.status !== "completed").length;
 
     return (
-      <div className={`relative w-full h-full flex flex-col items-center justify-center ${
-        hasSuperImportant ? "bg-red-500 text-white rounded-sm" : ""
-      }`}>
-        <span className={`font-medium ${hasSuperImportant ? "text-white text-lg" : ""}`}>
-          {day.getDate()}
-        </span>
-        {dayTasks.length > 0 && !hasSuperImportant && (
-          <div className="flex gap-0.5 mt-0.5">
-            {hasHigh && (
-              <div className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-            )}
-            {hasPending && !hasHigh && (
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-            )}
-            {hasCompleted && (
-              <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-            )}
-          </div>
-        )}
-        {hasSuperImportant && (
-          <div className="flex items-center gap-1 mt-0.5">
-            <Flame className="w-3 h-3 text-white animate-pulse" />
-            <span className="text-xs text-white font-bold">{dayTasks.length}</span>
-          </div>
-        )}
+      <div className={`relative w-full h-full flex flex-col items-center justify-center rounded-sm ${blockColor}`}>
+        <span className="font-medium text-lg">{day.getDate()}</span>
+        <div className="flex items-center gap-1 mt-0.5">
+          {hasSuperImportant && <Flame className="w-3 h-3 animate-pulse" />}
+          <span className="text-xs font-bold">{pendingCount > 0 ? pendingCount : "✓"}</span>
+        </div>
       </div>
     );
   };

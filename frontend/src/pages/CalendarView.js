@@ -94,21 +94,28 @@ const CalendarView = ({ user, setUser }) => {
   const tasksMap = getDatesWithTasks();
 
   // Get the highest priority for a date (for block coloring)
+  // Only considers non-completed tasks
   const getHighestPriority = (dayTasks) => {
-    if (dayTasks.some((t) => t.priority === "super_important" && t.status !== "completed")) {
+    const pendingTasks = dayTasks.filter(t => t.status !== "completed");
+    
+    // If all tasks are completed, return null (no coloring)
+    if (pendingTasks.length === 0) {
+      return null;
+    }
+    
+    if (pendingTasks.some((t) => t.priority === "super_important")) {
       return "super_important";
     }
-    if (dayTasks.some((t) => t.priority === "high" && t.status !== "completed")) {
+    if (pendingTasks.some((t) => t.priority === "high")) {
       return "high";
     }
-    if (dayTasks.some((t) => t.priority === "medium" && t.status !== "completed")) {
+    if (pendingTasks.some((t) => t.priority === "medium")) {
       return "medium";
     }
-    if (dayTasks.some((t) => t.priority === "low" && t.status !== "completed")) {
+    if (pendingTasks.some((t) => t.priority === "low")) {
       return "low";
     }
-    // All completed
-    return "completed";
+    return null;
   };
 
   // Get block color classes based on priority
@@ -121,8 +128,6 @@ const CalendarView = ({ user, setUser }) => {
         return "bg-orange-500 text-white";
       case "low":
         return "bg-blue-500 text-white";
-      case "completed":
-        return "bg-green-100 text-green-800";
       default:
         return "";
     }
@@ -145,13 +150,28 @@ const CalendarView = ({ user, setUser }) => {
     const blockColor = getBlockColor(highestPriority);
     const hasSuperImportant = highestPriority === "super_important";
     const pendingCount = dayTasks.filter(t => t.status !== "completed").length;
+    const completedCount = dayTasks.filter(t => t.status === "completed").length;
+    const allCompleted = pendingCount === 0;
+
+    // If all tasks completed, show normal block with checkmark
+    if (allCompleted) {
+      return (
+        <div className="relative w-full h-full flex flex-col items-center justify-center">
+          <span>{day.getDate()}</span>
+          <div className="flex items-center gap-1 mt-0.5">
+            <CheckCircle2 className="w-3 h-3 text-green-500" />
+            <span className="text-xs text-green-600 font-medium">{completedCount}</span>
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div className={`relative w-full h-full flex flex-col items-center justify-center rounded-sm ${blockColor}`}>
         <span className="font-medium text-lg">{day.getDate()}</span>
         <div className="flex items-center gap-1 mt-0.5">
           {hasSuperImportant && <Flame className="w-3 h-3 animate-pulse" />}
-          <span className="text-xs font-bold">{pendingCount > 0 ? pendingCount : "✓"}</span>
+          <span className="text-xs font-bold">{pendingCount}</span>
         </div>
       </div>
     );

@@ -405,11 +405,11 @@ const CalendarView = ({ user, setUser }) => {
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-sm bg-green-100 border border-green-300 flex items-center justify-center">
-                    <span className="text-green-800 text-xs">✓</span>
+                  <div className="w-6 h-6 rounded-sm border border-border flex items-center justify-center">
+                    <CheckCircle2 className="w-3 h-3 text-green-500" />
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    All Completed
+                    All Completed (Normal)
                   </span>
                 </div>
               </div>

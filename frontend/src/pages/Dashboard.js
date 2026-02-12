@@ -31,6 +31,49 @@ const Dashboard = ({ user, setUser }) => {
   const [previousScore, setPreviousScore] = useState(0);
   const [showVoiceCreator, setShowVoiceCreator] = useState(false);
   const [taskGroups, setTaskGroups] = useState([]);
+  
+  // Sticky notes state
+  const [stickyNotes, setStickyNotes] = useState(() => {
+    const saved = localStorage.getItem('taskpro_sticky_notes');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [newStickyNote, setNewStickyNote] = useState("");
+
+  // Save sticky notes to localStorage
+  useEffect(() => {
+    localStorage.setItem('taskpro_sticky_notes', JSON.stringify(stickyNotes));
+  }, [stickyNotes]);
+
+  const addStickyNote = () => {
+    if (!newStickyNote.trim()) return;
+    if (stickyNotes.length >= 10) {
+      toast.error("Maximum 10 quick tasks allowed!");
+      return;
+    }
+    const newNote = {
+      id: Date.now(),
+      text: newStickyNote.trim(),
+      completed: false
+    };
+    setStickyNotes([...stickyNotes, newNote]);
+    setNewStickyNote("");
+    toast.success("Quick task added!");
+  };
+
+  const toggleStickyNote = (id) => {
+    setStickyNotes(stickyNotes.map(note => 
+      note.id === id ? { ...note, completed: !note.completed } : note
+    ));
+  };
+
+  const deleteStickyNote = (id) => {
+    setStickyNotes(stickyNotes.filter(note => note.id !== id));
+  };
+
+  const clearCompletedNotes = () => {
+    setStickyNotes(stickyNotes.filter(note => !note.completed));
+    toast.success("Completed tasks cleared!");
+  };
 
   useEffect(() => {
     fetchDashboardData();

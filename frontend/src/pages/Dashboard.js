@@ -931,6 +931,101 @@ const Dashboard = ({ user, setUser }) => {
           )}
         </div>
 
+        {/* Sticky Note Quick Tasks Section */}
+        <div className="mt-8 mb-8">
+          <div 
+            className="relative bg-yellow-100 p-6 rounded-sm shadow-lg max-w-md transform rotate-1 hover:rotate-0 transition-transform"
+            style={{
+              background: "linear-gradient(180deg, #fef9c3 0%, #fef08a 100%)",
+              boxShadow: "4px 4px 15px rgba(0,0,0,0.15)"
+            }}
+            data-testid="sticky-notes-container"
+          >
+            {/* Tape effect */}
+            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 w-16 h-6 bg-yellow-200/80 rounded-sm" style={{ boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}></div>
+            
+            <div className="flex items-center gap-2 mb-4">
+              <StickyNote className="w-5 h-5 text-yellow-700" />
+              <h3 className="text-lg font-bold text-yellow-900 uppercase tracking-wide">Quick Tasks</h3>
+              <span className="text-xs text-yellow-700 ml-auto">{stickyNotes.length}/10</span>
+            </div>
+
+            {/* Add new task input */}
+            <div className="flex gap-2 mb-4">
+              <Input
+                value={newStickyNote}
+                onChange={(e) => setNewStickyNote(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && addStickyNote()}
+                placeholder="Add a quick task..."
+                className="bg-yellow-50 border-yellow-300 text-yellow-900 placeholder:text-yellow-600 text-sm"
+                maxLength={50}
+                data-testid="sticky-note-input"
+              />
+              <Button
+                size="sm"
+                onClick={addStickyNote}
+                disabled={stickyNotes.length >= 10}
+                className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                data-testid="add-sticky-note-btn"
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+
+            {/* Task list */}
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {stickyNotes.length === 0 ? (
+                <p className="text-yellow-700 text-sm text-center py-4 italic">
+                  No quick tasks yet. Add one above!
+                </p>
+              ) : (
+                stickyNotes.map((note, index) => (
+                  <div
+                    key={note.id}
+                    className={`flex items-center gap-3 p-2 rounded-sm transition-all ${
+                      note.completed ? "bg-yellow-200/50 opacity-60" : "bg-yellow-50 hover:bg-yellow-200/70"
+                    }`}
+                    data-testid={`sticky-note-${note.id}`}
+                  >
+                    <Checkbox
+                      checked={note.completed}
+                      onCheckedChange={() => toggleStickyNote(note.id)}
+                      className="border-yellow-600 data-[state=checked]:bg-yellow-600 data-[state=checked]:border-yellow-600"
+                      data-testid={`sticky-checkbox-${note.id}`}
+                    />
+                    <span 
+                      className={`flex-1 text-sm text-yellow-900 ${note.completed ? "line-through" : ""}`}
+                    >
+                      {note.text}
+                    </span>
+                    <button
+                      onClick={() => deleteStickyNote(note.id)}
+                      className="text-yellow-600 hover:text-red-600 transition-colors"
+                      data-testid={`delete-sticky-${note.id}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Clear completed button */}
+            {stickyNotes.some(n => n.completed) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearCompletedNotes}
+                className="mt-3 text-yellow-700 hover:text-yellow-900 hover:bg-yellow-200 w-full"
+                data-testid="clear-completed-sticky-btn"
+              >
+                <Trash2 className="w-3 h-3 mr-2" />
+                Clear Completed
+              </Button>
+            )}
+          </div>
+        </div>
+
         {/* Quick Actions Section */}
         <div className="mt-8">
           <h3 className="text-2xl font-medium tracking-tight mb-6" data-testid="quick-actions-heading">QUICK ACTIONS</h3>

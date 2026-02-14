@@ -557,20 +557,20 @@ const Dashboard = ({ user, setUser }) => {
               
               {/* Mascot Holding Sticky Note */}
               <div className="relative flex-shrink-0" data-testid="mascot-sticky-container">
-                {/* Mascot */}
-                <div className="absolute -left-16 -bottom-4 z-10 hidden lg:block">
+                {/* Mascot on top */}
+                <div className="absolute -top-20 left-1/2 transform -translate-x-1/2 z-10">
                   <img 
                     src="https://static.prod-images.emergentagent.com/jobs/9fbc21f8-64e2-4716-bbae-173dedbd0b1d/images/0a7307e5d8fdecb2cbc70bdb5b8dc35fda6df5b62db30c2452a539607f04309f.png"
                     alt="TaskPro Mascot"
-                    className="w-24 h-24 object-contain drop-shadow-lg animate-bounce"
-                    style={{ animationDuration: "2s" }}
+                    className="w-20 h-20 object-contain drop-shadow-lg"
+                    style={{ animation: "float 3s ease-in-out infinite" }}
                     data-testid="taskpro-mascot"
                   />
                 </div>
                 
                 {/* Sticky Note Quick Tasks */}
                 <div 
-                  className="relative bg-yellow-100 p-5 rounded-sm shadow-lg w-full lg:w-80 transform lg:-rotate-1 hover:rotate-0 transition-transform"
+                  className="relative bg-yellow-100 p-5 rounded-sm shadow-lg w-full lg:w-80 mt-8"
                   style={{
                     background: "linear-gradient(180deg, #fef9c3 0%, #fef08a 100%)",
                     boxShadow: "4px 4px 15px rgba(0,0,0,0.15)"

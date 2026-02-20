@@ -597,6 +597,17 @@ const AuthPage = ({ setUser }) => {
                 >
                   {paymentProcessing ? "PROCESSING..." : `PAY ₹${getSelectedPlanDetails().price} & REGISTER`}
                 </Button>
+                
+                <p className="text-xs text-muted-foreground text-center mt-4">
+                  By registering, you agree to our{" "}
+                  <button 
+                    type="button"
+                    onClick={() => navigate("/privacy")} 
+                    className="text-primary hover:underline"
+                  >
+                    Privacy Policy
+                  </button>
+                </p>
               </form>
             </div>
 

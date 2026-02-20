@@ -161,7 +161,7 @@ const UpgradePage = ({ user, setUser }) => {
 
       // Real Razorpay payment flow
       const options = {
-        key: "rzp_test_yourkeyhere",
+        key: "rzp_live_SISn6oCxRfdAJX",
         amount: orderResponse.data.amount,
         currency: orderResponse.data.currency,
         name: "TaskPlay",

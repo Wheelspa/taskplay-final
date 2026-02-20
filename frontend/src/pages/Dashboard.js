@@ -422,7 +422,7 @@ const Dashboard = ({ user, setUser }) => {
         <div className="max-w-7xl mx-auto px-6 md:px-12 py-6">
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold tracking-tight" data-testid="dashboard-logo">TASKPRO</h1>
+              <h1 className="text-2xl font-bold tracking-tight" data-testid="dashboard-logo">TASKPLAY</h1>
             </div>
             <div className="flex items-center gap-4">
               {criticalTasks.length > 0 && (
@@ -523,11 +523,11 @@ const Dashboard = ({ user, setUser }) => {
           <div className="sticky top-6">
             <img
               src="https://customer-assets.emergentagent.com/job_taskflow-pro-95/artifacts/mrfodckx_Gemini_Generated_Image_xk0v49xk0v49xk0v.png"
-              alt="TaskPro Brand Ambassador"
+              alt="TaskPlay Brand Ambassador"
               className="w-full h-auto rounded-sm shadow-lg mb-4"
               data-testid="brand-ambassador-full"
             />
-            <h3 className="text-lg font-bold text-primary text-center">TASKPRO</h3>
+            <h3 className="text-lg font-bold text-primary text-center">TASKPLAY</h3>
             <p className="text-xs text-muted-foreground text-center mt-1">Trusted by 10,000+ Professionals</p>
             <div className="mt-4 space-y-2 text-xs text-muted-foreground">
               <p className="flex items-center gap-2">
@@ -561,10 +561,10 @@ const Dashboard = ({ user, setUser }) => {
                 <div className="absolute -top-20 left-1/2 transform -translate-x-1/2 z-10">
                   <img 
                     src="https://static.prod-images.emergentagent.com/jobs/9fbc21f8-64e2-4716-bbae-173dedbd0b1d/images/0a7307e5d8fdecb2cbc70bdb5b8dc35fda6df5b62db30c2452a539607f04309f.png"
-                    alt="TaskPro Mascot"
+                    alt="TaskPlay Mascot"
                     className="w-20 h-20 object-contain drop-shadow-lg"
                     style={{ animation: "float 3s ease-in-out infinite" }}
-                    data-testid="taskpro-mascot"
+                    data-testid="taskplay-mascot"
                   />
                 </div>
                 

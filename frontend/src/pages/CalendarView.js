@@ -245,7 +245,7 @@ const CalendarView = ({ user, setUser }) => {
               onClick={() => navigate("/dashboard")}
               data-testid="calendar-logo"
             >
-              TASKPRO
+              TASKPLAY
             </h1>
             <div className="flex items-center gap-4">
               <span

@@ -234,7 +234,7 @@ const TaskFormPage = ({ user, setUser }) => {
     <div className="min-h-screen bg-background">
       <nav className="border-b border-border">
         <div className="max-w-7xl mx-auto px-6 md:px-12 py-6 flex justify-between items-center">
-          <h1 className="text-2xl font-bold tracking-tight" data-testid="taskform-logo">TASKPRO</h1>
+          <h1 className="text-2xl font-bold tracking-tight" data-testid="taskform-logo">TASKPLAY</h1>
           <div className="flex items-center gap-4">
             <Button
               variant="outline"

@@ -164,7 +164,7 @@ const UpgradePage = ({ user, setUser }) => {
         key: "rzp_test_yourkeyhere",
         amount: orderResponse.data.amount,
         currency: orderResponse.data.currency,
-        name: "TaskPro",
+        name: "TaskPlay",
         description: `Upgrade to ${planDetails.type.charAt(0).toUpperCase() + planDetails.type.slice(1)} - ${planDetails.cycle.charAt(0).toUpperCase() + planDetails.cycle.slice(1)}`,
         order_id: orderResponse.data.order_id,
         handler: async function (response) {

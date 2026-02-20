@@ -205,7 +205,7 @@ const AuthPage = ({ setUser }) => {
         key: "rzp_test_yourkeyhere",
         amount: orderResponse.data.amount,
         currency: orderResponse.data.currency,
-        name: "TaskPro",
+        name: "TaskPlay",
         description: `${planDetails.type.charAt(0).toUpperCase() + planDetails.type.slice(1)} - ${planDetails.cycle.charAt(0).toUpperCase() + planDetails.cycle.slice(1)}`,
         order_id: orderResponse.data.order_id,
         handler: async function (response) {
@@ -286,11 +286,11 @@ const AuthPage = ({ setUser }) => {
         <div className="relative text-center">
           <img
             src="https://customer-assets.emergentagent.com/job_taskflow-pro-95/artifacts/mrfodckx_Gemini_Generated_Image_xk0v49xk0v49xk0v.png"
-            alt="TaskPro Brand Ambassador"
+            alt="TaskPlay Brand Ambassador"
             className="w-80 h-auto rounded-sm shadow-2xl mx-auto mb-6"
             data-testid="brand-ambassador-img"
           />
-          <h2 className="text-2xl font-bold text-primary mb-2">TASKPRO</h2>
+          <h2 className="text-2xl font-bold text-primary mb-2">TASKPLAY</h2>
           <p className="text-muted-foreground text-sm">Trusted by 10,000+ Professionals</p>
           <div className="mt-6 space-y-2">
             <p className="text-xs text-muted-foreground flex items-center justify-center gap-2">
@@ -315,7 +315,7 @@ const AuthPage = ({ setUser }) => {
             </h1>
             <p className="text-muted-foreground">
               {mode === "login"
-                ? "Sign in to your TaskPro account"
+                ? "Sign in to your TaskPlay account"
                 : "Choose a plan and get started"}
             </p>
           </div>

@@ -34,14 +34,14 @@ const Dashboard = ({ user, setUser }) => {
   
   // Sticky notes state
   const [stickyNotes, setStickyNotes] = useState(() => {
-    const saved = localStorage.getItem('taskpro_sticky_notes');
+    const saved = localStorage.getItem('taskplay_sticky_notes');
     return saved ? JSON.parse(saved) : [];
   });
   const [newStickyNote, setNewStickyNote] = useState("");
 
   // Save sticky notes to localStorage
   useEffect(() => {
-    localStorage.setItem('taskpro_sticky_notes', JSON.stringify(stickyNotes));
+    localStorage.setItem('taskplay_sticky_notes', JSON.stringify(stickyNotes));
   }, [stickyNotes]);
 
   const addStickyNote = () => {

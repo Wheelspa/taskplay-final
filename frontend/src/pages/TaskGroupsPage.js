@@ -165,7 +165,7 @@ const TaskGroupsPage = ({ user, setUser }) => {
               onClick={() => navigate("/dashboard")}
               data-testid="groups-logo"
             >
-              TASKPRO
+              TASKPLAY
             </h1>
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground">

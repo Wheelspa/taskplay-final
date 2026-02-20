@@ -9,7 +9,7 @@ const LandingPage = () => {
     <div className="min-h-screen bg-background">
       <nav className="border-b border-border">
         <div className="max-w-7xl mx-auto px-6 md:px-12 py-6 flex justify-between items-center">
-          <h1 className="text-2xl font-bold tracking-tight" data-testid="logo">TASKPRO</h1>
+          <h1 className="text-2xl font-bold tracking-tight" data-testid="logo">TASKPLAY</h1>
           <div className="flex gap-4">
             <Button
               variant="ghost"
@@ -36,7 +36,7 @@ const LandingPage = () => {
               <div className="absolute -inset-4 bg-gradient-to-br from-primary/20 to-purple-500/20 rounded-full blur-2xl"></div>
               <img
                 src="https://customer-assets.emergentagent.com/job_taskflow-pro-95/artifacts/mrfodckx_Gemini_Generated_Image_xk0v49xk0v49xk0v.png"
-                alt="TaskPro Brand Ambassador"
+                alt="TaskPlay Brand Ambassador"
                 className="relative w-72 h-auto rounded-sm shadow-2xl"
                 data-testid="brand-ambassador-img"
               />
@@ -164,7 +164,7 @@ const LandingPage = () => {
 
       <footer className="border-t border-border py-12 px-6 md:px-12">
         <div className="max-w-7xl mx-auto text-center text-muted-foreground">
-          <p>© 2025 TASKPRO. Professional task management for modern teams.</p>
+          <p>© 2025 TASKPLAY. Professional task management for modern teams.</p>
         </div>
       </footer>
     </div>

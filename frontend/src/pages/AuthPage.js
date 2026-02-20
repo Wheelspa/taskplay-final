@@ -570,7 +570,7 @@ const AuthPage = ({ setUser }) => {
                         {selectedPlan.includes("basic") ? "Basic" : "Premium"} Plan - {billingCycle === "yearly" ? "Yearly" : "Monthly"}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        💡 Testing mode: Mock payment will be used (no real charges)
+                        🔒 Secure payment powered by Razorpay
                       </p>
                     </div>
                     <div className="text-right">

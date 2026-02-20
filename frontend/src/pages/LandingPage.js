@@ -164,7 +164,21 @@ const LandingPage = () => {
 
       <footer className="border-t border-border py-12 px-6 md:px-12">
         <div className="max-w-7xl mx-auto text-center text-muted-foreground">
-          <p>© 2025 TASKPLAY. Professional task management for modern teams.</p>
+          <p>© 2026 TASKPLAY. Professional task management for modern teams.</p>
+          <div className="flex justify-center gap-6 mt-4">
+            <button 
+              onClick={() => navigate("/privacy")} 
+              className="text-sm hover:text-primary transition-colors"
+            >
+              Privacy Policy
+            </button>
+            <button 
+              onClick={() => navigate("/auth")} 
+              className="text-sm hover:text-primary transition-colors"
+            >
+              Login
+            </button>
+          </div>
         </div>
       </footer>
     </div>

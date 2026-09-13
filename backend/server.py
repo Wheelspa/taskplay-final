@@ -439,6 +439,14 @@ async def register(user: UserRegister):
         if discount_info and not discount_info.get("valid"):
             raise HTTPException(status_code=400, detail=discount_info.get("error", "Invalid discount code"))
     
+    # Payment is compulsory - membership_plan must be selected
+    if not user.membership_plan or user.membership_plan not in MEMBERSHIP_PLANS:
+        raise HTTPException(status_code=400, detail="Please select a valid membership plan")
+    
+    # Payment details are compulsory
+    if not (user.payment_order_id and user.payment_id and user.payment_signature):
+        raise HTTPException(status_code=400, detail="Payment verification is required to register")
+    
     is_paid = False
     membership_type = None
     membership_plan = None

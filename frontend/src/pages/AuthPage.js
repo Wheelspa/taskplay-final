@@ -202,7 +202,7 @@ const AuthPage = ({ setUser }) => {
 
       // Real Razorpay payment flow
       const options = {
-        key: "rzp_live_SISn6oCxRfdAJX",
+        key: process.env.REACT_APP_RAZORPAY_KEY_ID,
         amount: orderResponse.data.amount,
         currency: orderResponse.data.currency,
         name: "TaskPlay",

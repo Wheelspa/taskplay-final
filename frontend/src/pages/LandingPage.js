@@ -178,6 +178,12 @@ const LandingPage = () => {
             >
               Login
             </button>
+            <button 
+              onClick={() => navigate("/admin/login")} 
+              className="text-sm hover:text-primary transition-colors"
+            >
+              Admin Login
+            </button>
           </div>
         </div>
       </footer>

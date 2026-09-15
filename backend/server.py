@@ -12,6 +12,7 @@ from datetime import datetime, timezone, timedelta
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 import razorpay
+import bcrypt
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -89,6 +90,7 @@ class UserResponse(BaseModel):
     membership_type: Optional[str] = None  # "basic" or "premium"
     membership_plan: Optional[str] = None  # "monthly" or "yearly"
     membership_expires_at: Optional[str] = None
+    is_admin: bool = False
 
 class Token(BaseModel):
     access_token: str
@@ -217,10 +219,16 @@ class PaymentVerify(BaseModel):
     signature: str
 
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    try:
+        return pwd_context.hash(password)
+    except Exception:
+        return bcrypt.hashpw(password.encode('utf-8')[:72], bcrypt.gensalt()).decode('utf-8')
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    try:
+        return pwd_context.verify(plain_password, hashed_password)
+    except Exception:
+        return bcrypt.checkpw(plain_password.encode('utf-8')[:72], hashed_password.encode('utf-8'))
 
 def calculate_task_points(priority: str) -> int:
     """Calculate points earned for completing a task based on priority"""
@@ -255,6 +263,121 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     # Convert _id to id for consistency
     user["id"] = user["_id"]
     return user
+
+async def get_current_admin(current_user: dict = Depends(get_current_user)):
+    if not current_user.get("is_admin"):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user
+
+def get_user_plan_price(user: dict) -> float:
+    m_plan = user.get("membership_plan")
+    m_type = user.get("membership_type")
+    plan_info = None
+    if m_plan in MEMBERSHIP_PLANS:
+        plan_info = MEMBERSHIP_PLANS[m_plan]
+    elif m_type and m_plan and f"{m_type}_{m_plan}" in MEMBERSHIP_PLANS:
+        plan_info = MEMBERSHIP_PLANS[f"{m_type}_{m_plan}"]
+    
+    if plan_info and "amount" in plan_info:
+        return plan_info["amount"] / 100.0
+    return 0.0
+
+# ==================== ADMIN ENDPOINTS ====================
+
+@api_router.get("/admin/dashboard")
+async def get_admin_dashboard(admin: dict = Depends(get_current_admin)):
+    total_users = await db.users.count_documents({})
+    total_tasks = await db.tasks.count_documents({})
+    basic_users_count = await db.users.count_documents({"membership_type": "basic"})
+    premium_users_count = await db.users.count_documents({"membership_type": "premium"})
+    paid_users_count = await db.users.count_documents({"is_paid": True})
+    unpaid_users_count = total_users - paid_users_count
+    
+    paid_users = await db.users.find({"is_paid": True}).to_list(10000)
+    total_revenue = sum(get_user_plan_price(u) for u in paid_users)
+    
+    return {
+        "total_users": total_users,
+        "total_revenue": total_revenue,
+        "total_tasks": total_tasks,
+        "basic_users_count": basic_users_count,
+        "premium_users_count": premium_users_count,
+        "paid_users_count": paid_users_count,
+        "unpaid_users_count": unpaid_users_count
+    }
+
+@api_router.get("/admin/users")
+async def get_admin_users(
+    search: Optional[str] = None,
+    plan: Optional[str] = None,
+    paid: Optional[str] = None,
+    admin: dict = Depends(get_current_admin)
+):
+    and_conditions = []
+    
+    if search and search.strip():
+        regex_pattern = {"$regex": search.strip(), "$options": "i"}
+        and_conditions.append({"$or": [{"name": regex_pattern}, {"email": regex_pattern}]})
+        
+    if plan and plan.strip():
+        and_conditions.append({"membership_type": plan.strip().lower()})
+        
+    if paid is not None and str(paid).strip():
+        paid_str = str(paid).lower().strip()
+        if paid_str == "true":
+            and_conditions.append({"is_paid": True})
+        elif paid_str == "false":
+            and_conditions.append({"$or": [{"is_paid": False}, {"is_paid": {"$exists": False}}]})
+            
+    if not and_conditions:
+        query = {}
+    elif len(and_conditions) == 1:
+        query = and_conditions[0]
+    else:
+        query = {"$and": and_conditions}
+    
+    users = await db.users.find(query).to_list(10000)
+    result = []
+    for u in users:
+        result.append({
+            "id": u["_id"],
+            "name": u.get("name", ""),
+            "email": u.get("email", ""),
+            "phone": u.get("phone", ""),
+            "created_at": u.get("created_at", ""),
+            "is_paid": bool(u.get("is_paid", False)),
+            "is_admin": bool(u.get("is_admin", False)),
+            "membership_type": u.get("membership_type"),
+            "membership_plan": u.get("membership_plan"),
+            "membership_expires_at": u.get("membership_expires_at")
+        })
+    return result
+
+@api_router.get("/admin/payments")
+async def get_admin_payments(admin: dict = Depends(get_current_admin)):
+    paid_users = await db.users.find({"is_paid": True}).to_list(10000)
+    records = []
+    for u in paid_users:
+        amount = get_user_plan_price(u)
+        plan = u.get("membership_plan")
+        m_type = u.get("membership_type")
+        if plan and m_type and f"{m_type}_{plan}" in MEMBERSHIP_PLANS:
+            plan_display = f"{m_type.capitalize()} ({plan.capitalize()})"
+        elif plan in MEMBERSHIP_PLANS:
+            plan_display = plan
+        else:
+            plan_display = f"{m_type or ''} {plan or ''}".strip() or "N/A"
+            
+        records.append({
+            "id": u["_id"],
+            "user_name": u.get("name", ""),
+            "user_email": u.get("email", ""),
+            "membership_plan": plan_display,
+            "amount": amount,
+            "date": u.get("upgraded_at") or u.get("created_at", "")
+        })
+    return records
+
 
 @api_router.post("/payment/create-order")
 async def create_payment_order(order: PaymentOrderCreate):
@@ -494,6 +617,7 @@ async def register(user: UserRegister):
         "password": hash_password(user.password),
         "name": user.name,
         "phone": user.phone,
+        "is_admin": False,
         "is_paid": is_paid,
         "membership_type": membership_type,
         "membership_plan": membership_plan,
@@ -515,7 +639,8 @@ async def register(user: UserRegister):
         is_paid=is_paid,
         membership_type=membership_type,
         membership_plan=membership_plan,
-        membership_expires_at=membership_expires_at
+        membership_expires_at=membership_expires_at,
+        is_admin=False
     )
     
     return Token(access_token=access_token, token_type="bearer", user=user_response)
@@ -537,7 +662,8 @@ async def login(user: UserLogin):
         is_paid=db_user.get("is_paid", False),
         membership_type=db_user.get("membership_type"),
         membership_plan=db_user.get("membership_plan"),
-        membership_expires_at=db_user.get("membership_expires_at")
+        membership_expires_at=db_user.get("membership_expires_at"),
+        is_admin=db_user.get("is_admin", False)
     )
     
     return Token(access_token=access_token, token_type="bearer", user=user_response)
@@ -553,7 +679,8 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         is_paid=current_user.get("is_paid", False),
         membership_type=current_user.get("membership_type"),
         membership_plan=current_user.get("membership_plan"),
-        membership_expires_at=current_user.get("membership_expires_at")
+        membership_expires_at=current_user.get("membership_expires_at"),
+        is_admin=current_user.get("is_admin", False)
     )
 
 # ==================== TASK GROUP ENDPOINTS ====================
@@ -1307,10 +1434,43 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+async def init_admin_user():
+    try:
+        admin_email = "warke.sandeep@gmail.com"
+        existing_admin = await db.users.find_one({"email": admin_email})
+        if not existing_admin:
+            now = datetime.now(timezone.utc)
+            one_year_later = now + timedelta(days=365)
+            admin_id = f"user_{now.timestamp()}"
+            admin_doc = {
+                "_id": admin_id,
+                "email": admin_email,
+                "password": hash_password("Admin@12345"),
+                "name": "Admin",
+                "phone": "0000000000",
+                "is_admin": True,
+                "is_paid": True,
+                "membership_type": "premium",
+                "membership_plan": "yearly",
+                "membership_expires_at": one_year_later.isoformat(),
+                "created_at": now.isoformat()
+            }
+            await db.users.insert_one(admin_doc)
+            logger.info("Admin user created")
+        else:
+            await db.users.update_one(
+                {"_id": existing_admin["_id"]},
+                {"$set": {"is_admin": True}}
+            )
+            logger.info("Admin user already exists, is_admin set to True")
+    except Exception as e:
+        logger.error(f"Error initializing admin user: {e}")
+
 @app.on_event("startup")
 async def startup_event():
-    """Run monthly cleanup check on server startup"""
+    """Run monthly cleanup check and initialize admin user on server startup"""
     await clear_monthly_tasks()
+    await init_admin_user()
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

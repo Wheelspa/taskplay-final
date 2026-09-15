@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams, useLocation } from "react-router-dom";
 import axios from "axios";
 import { API, removeAuthToken } from "../App";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,9 @@ const LocationPicker = ({ position, setPosition }) => {
 const TaskFormPage = ({ user, setUser }) => {
   const navigate = useNavigate();
   const { taskId } = useParams();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const returnTo = searchParams.get("returnTo") || location.state?.returnTo;
   const isEdit = Boolean(taskId);
   
   const [loading, setLoading] = useState(false);
@@ -207,7 +210,7 @@ const TaskFormPage = ({ user, setUser }) => {
         await axios.post(`${API}/tasks`, submitData);
         toast.success("Task created successfully");
       }
-      navigate("/tasks");
+      navigate(returnTo || "/tasks");
     } catch (error) {
       toast.error(error.response?.data?.detail || "Failed to save task");
     } finally {
@@ -238,11 +241,11 @@ const TaskFormPage = ({ user, setUser }) => {
           <div className="flex items-center gap-4">
             <Button
               variant="outline"
-              onClick={() => navigate("/tasks")}
+              onClick={() => navigate(returnTo || "/tasks")}
               data-testid="back-to-tasks-btn"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              TASKS
+              BACK
             </Button>
             <Button
               variant="ghost"

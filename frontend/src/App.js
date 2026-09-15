@@ -14,6 +14,11 @@ import TaskDetailPage from "./pages/TaskDetailPage";
 import UpgradePage from "./pages/UpgradePage";
 import TaskGroupsPage from "./pages/TaskGroupsPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import AdminLoginPage from "./pages/AdminLoginPage";
+import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminPaymentsPage from "./pages/AdminPaymentsPage";
+import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import { Toaster } from "@/components/ui/sonner";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
@@ -170,6 +175,31 @@ function App() {
               <ProtectedRoute>
                 <TaskDetailPage user={user} setUser={setUser} />
               </ProtectedRoute>
+            }
+          />
+          <Route path="/admin/login" element={<AdminLoginPage setUser={setUser} />} />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <AdminProtectedRoute user={user}>
+                <AdminDashboardPage user={user} setUser={setUser} />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <AdminProtectedRoute user={user}>
+                <AdminUsersPage user={user} setUser={setUser} />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/payments"
+            element={
+              <AdminProtectedRoute user={user}>
+                <AdminPaymentsPage user={user} setUser={setUser} />
+              </AdminProtectedRoute>
             }
           />
         </Routes>

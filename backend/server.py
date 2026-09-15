@@ -256,6 +256,17 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     user["id"] = user["_id"]
     return user
 
+@api_router.get("/debug/razorpay-check")
+async def debug_razorpay_check():
+    key_id = os.environ.get('RAZORPAY_KEY_ID', '')
+    key_secret = os.environ.get('RAZORPAY_KEY_SECRET', '')
+    return {
+        "key_id_length": len(key_id),
+        "key_id_repr": repr(key_id),
+        "secret_length": len(key_secret),
+        "secret_repr": repr(key_secret[:5] + "..." + key_secret[-5:]) if len(key_secret) > 10 else repr(key_secret)
+    }
+
 @api_router.post("/payment/create-order")
 async def create_payment_order(order: PaymentOrderCreate):
     try:

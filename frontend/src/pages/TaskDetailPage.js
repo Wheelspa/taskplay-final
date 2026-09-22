@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Calendar, Phone, MapPin, LogOut, ArrowLeft, Edit, Trash2, Clock } from "lucide-react";
+import { Calendar, Phone, MapPin, LogOut, ArrowLeft, Edit, Trash2, Clock, Pin } from "lucide-react";
 import { toast } from "sonner";
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -47,6 +47,18 @@ const TaskDetailPage = ({ user, setUser }) => {
       navigate("/tasks");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTogglePin = async () => {
+    if (!task) return;
+    try {
+      const newPinned = !task.is_pinned;
+      await axios.put(`${API}/tasks/${task.id}`, { is_pinned: newPinned });
+      setTask({ ...task, is_pinned: newPinned });
+      toast.success(newPinned ? "Task pinned to Dashboard" : "Task unpinned from Dashboard");
+    } catch (error) {
+      toast.error("Failed to update pin status");
     }
   };
 
@@ -167,6 +179,15 @@ const TaskDetailPage = ({ user, setUser }) => {
             </h2>
           </div>
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleTogglePin}
+              className={task.is_pinned ? "border-amber-500 text-amber-700 bg-amber-50 hover:bg-amber-100" : ""}
+              data-testid={task.is_pinned ? "unpin-detail-btn" : "pin-detail-btn"}
+            >
+              <Pin className={`w-4 h-4 mr-2 ${task.is_pinned ? "fill-amber-500 text-amber-600" : ""}`} />
+              {task.is_pinned ? "PINNED" : "PIN TO DASHBOARD"}
+            </Button>
             <Button
               onClick={() => navigate(`/tasks/${taskId}/edit`)}
               data-testid="edit-task-btn"

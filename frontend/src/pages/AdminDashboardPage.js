@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { 
   Users, IndianRupee, CheckSquare, Zap, Crown, CreditCard, UserX, LogOut, 
   ShieldCheck, LayoutDashboard, Plus, Calendar, MapPin, Phone, Trash2, Edit, 
-  CheckCircle2, Clock, Check
+  Clock, Check, UserCheck
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -89,6 +89,44 @@ const AdminDashboardPage = ({ user, setUser }) => {
         return <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">{priority}</span>;
     }
   };
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case "completed":
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+            Completed
+          </span>
+        );
+      case "in_progress":
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+            In Progress
+          </span>
+        );
+      default:
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+            Pending
+          </span>
+        );
+    }
+  };
+
+  // Filter tasks into Personal vs Assigned to Others
+  const personalTasks = tasks.filter((t) => {
+    if (!t.assignee_phone || t.assignee_phone.trim() === "") return true;
+    if (t.assigned_to_user_id && t.assigned_to_user_id === user?.id) return true;
+    if (user?.phone && t.assignee_phone === user.phone) return true;
+    return false;
+  });
+
+  const assignedTasks = tasks.filter((t) => {
+    if (!t.assignee_phone || t.assignee_phone.trim() === "") return false;
+    if (t.assigned_to_user_id && t.assigned_to_user_id === user?.id) return false;
+    if (user?.phone && t.assignee_phone === user.phone) return false;
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -257,7 +295,7 @@ const AdminDashboardPage = ({ user, setUser }) => {
           )}
         </div>
 
-        {/* Section: Admin Personal Task Management */}
+        {/* Section 1: Admin Personal Tasks */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-6 border-b border-gray-200 mb-6 gap-4">
             <div>
@@ -280,23 +318,15 @@ const AdminDashboardPage = ({ user, setUser }) => {
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
-          ) : tasks.length === 0 ? (
+          ) : personalTasks.length === 0 ? (
             <div className="text-center py-12 text-gray-500 space-y-3">
               <CheckSquare className="w-12 h-12 text-gray-300 mx-auto" />
-              <p className="text-base font-medium text-gray-700">No tasks created yet</p>
+              <p className="text-base font-medium text-gray-700">No personal tasks found</p>
               <p className="text-sm text-gray-500">Click "Add New Task" above to create your first personal task.</p>
-              <Button
-                onClick={() => navigate("/tasks/new?returnTo=/admin/dashboard")}
-                variant="outline"
-                className="mt-2"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add New Task
-              </Button>
             </div>
           ) : (
             <div className="space-y-4">
-              {tasks.map((task) => {
+              {personalTasks.map((task) => {
                 const isCompleted = task.status === "completed";
                 return (
                   <div
@@ -348,23 +378,6 @@ const AdminDashboardPage = ({ user, setUser }) => {
                               </span>
                             )}
 
-                            {task.assignee_name && (
-                              <span className="flex items-center space-x-1">
-                                <Users className="w-3.5 h-3.5 text-gray-400" />
-                                <span>Assignee: {task.assignee_name}</span>
-                              </span>
-                            )}
-
-                            {task.assignee_phone && (
-                              <a
-                                href={`tel:${task.assignee_phone}`}
-                                className="flex items-center space-x-1 text-blue-600 hover:underline"
-                              >
-                                <Phone className="w-3.5 h-3.5" />
-                                <span>{task.assignee_phone}</span>
-                              </a>
-                            )}
-
                             {task.location_address && (
                               <span className="flex items-center space-x-1">
                                 <MapPin className="w-3.5 h-3.5 text-gray-400" />
@@ -400,6 +413,128 @@ const AdminDashboardPage = ({ user, setUser }) => {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+
+        {/* Section 2: Tasks I Assigned */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-6 border-b border-gray-200 mb-6 gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
+                <UserCheck className="w-5 h-5 text-indigo-600" />
+                <span>Tasks I Assigned</span>
+              </h2>
+              <p className="text-sm text-gray-500 mt-0.5">Track and oversee tasks assigned to other team members or users.</p>
+            </div>
+          </div>
+
+          {tasksLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            </div>
+          ) : assignedTasks.length === 0 ? (
+            <div className="text-center py-12 text-gray-500 space-y-3">
+              <UserCheck className="w-12 h-12 text-gray-300 mx-auto" />
+              <p className="text-base font-medium text-gray-700">No tasks assigned to others</p>
+              <p className="text-sm text-gray-500">Tasks you assign to other users via assignee phone will appear here for tracking.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {assignedTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className="p-4 rounded-lg border border-gray-200 bg-white hover:border-indigo-200 shadow-sm transition-all"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-1.5 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-semibold text-base text-gray-900">
+                          {task.title}
+                        </h3>
+                        {getPriorityBadge(task.priority)}
+                        {getStatusBadge(task.status)}
+                        {task.group_name && (
+                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                            {task.group_name}
+                          </span>
+                        )}
+                      </div>
+
+                      {task.description && (
+                        <p className="text-sm text-gray-600">
+                          {task.description}
+                        </p>
+                      )}
+
+                      <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 pt-1">
+                        {task.scheduled_date && (
+                          <span className="flex items-center space-x-1">
+                            <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                            <span>{task.scheduled_date} {task.scheduled_time ? `at ${task.scheduled_time}` : ""}</span>
+                          </span>
+                        )}
+
+                        {task.assignee_name ? (
+                          <span className="flex items-center space-x-1 text-indigo-700 font-medium">
+                            <Users className="w-3.5 h-3.5 text-indigo-500" />
+                            <span>Assigned to: {task.assignee_name}</span>
+                          </span>
+                        ) : (
+                          task.assignee_phone && (
+                            <a
+                              href={`tel:${task.assignee_phone}`}
+                              className="flex items-center space-x-1 text-indigo-700 font-medium hover:underline"
+                            >
+                              <Phone className="w-3.5 h-3.5 text-indigo-500" />
+                              <span>Assigned to: {task.assignee_phone}</span>
+                            </a>
+                          )
+                        )}
+
+                        {task.assignee_name && task.assignee_phone && (
+                          <a
+                            href={`tel:${task.assignee_phone}`}
+                            className="flex items-center space-x-1 text-blue-600 hover:underline"
+                          >
+                            <Phone className="w-3.5 h-3.5" />
+                            <span>{task.assignee_phone}</span>
+                          </a>
+                        )}
+
+                        {task.location_address && (
+                          <span className="flex items-center space-x-1">
+                            <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                            <span>{task.location_address}</span>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/tasks/${task.id}/edit?returnTo=/admin/dashboard`)}
+                        className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700"
+                        title="Edit Task"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteTask(task.id)}
+                        className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        title="Delete Task"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>

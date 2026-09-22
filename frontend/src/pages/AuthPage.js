@@ -5,7 +5,7 @@ import { API, setAuthToken } from "../App";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Check, Crown, Zap, Tag } from "lucide-react";
+import { Check, Crown, Zap, Tag, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 const AuthPage = ({ setUser }) => {
@@ -309,6 +309,19 @@ const AuthPage = ({ setUser }) => {
       {/* Auth Form - Right Side */}
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className={`w-full ${mode === "register" ? "max-w-4xl" : "max-w-md"}`}>
+          <div className="mb-6 flex justify-start">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/")}
+              className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 p-0 h-auto hover:bg-transparent"
+              data-testid="back-to-home-btn"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="font-medium">Back to Home</span>
+            </Button>
+          </div>
+
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold tracking-tight mb-2" data-testid="auth-heading">
               {mode === "login" ? "LOGIN" : "CREATE ACCOUNT"}

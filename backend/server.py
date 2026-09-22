@@ -91,6 +91,7 @@ class UserResponse(BaseModel):
     membership_plan: Optional[str] = None  # "monthly" or "yearly"
     membership_expires_at: Optional[str] = None
     is_admin: bool = False
+    last_login: Optional[str] = None
 
 class Token(BaseModel):
     access_token: str
@@ -133,6 +134,9 @@ class TaskCreate(BaseModel):
     location_address: Optional[str] = None
     status: str = "pending"
     group_id: Optional[str] = None  # Task group
+    is_pinned: Optional[bool] = False
+    assigned_to_user_id: Optional[str] = None
+    assigned_by_name: Optional[str] = None
 
 class TaskUpdate(BaseModel):
     title: Optional[str] = None
@@ -149,6 +153,9 @@ class TaskUpdate(BaseModel):
     completed_at: Optional[str] = None
     points_earned: Optional[int] = None
     group_id: Optional[str] = None
+    is_pinned: Optional[bool] = None
+    assigned_to_user_id: Optional[str] = None
+    assigned_by_name: Optional[str] = None
 
 class TaskResponse(BaseModel):
     id: str
@@ -172,6 +179,9 @@ class TaskResponse(BaseModel):
     group_id: Optional[str] = None
     group_name: Optional[str] = None
     assigned_to: Optional[List[str]] = None
+    is_pinned: bool = False
+    assigned_to_user_id: Optional[str] = None
+    assigned_by_name: Optional[str] = None
 
 class TeamCreate(BaseModel):
     name: str
@@ -217,6 +227,41 @@ class PaymentVerify(BaseModel):
     order_id: str
     payment_id: str
     signature: str
+
+# Checklist Models
+class ChecklistCreate(BaseModel):
+    title: str
+
+class ChecklistUpdate(BaseModel):
+    title: Optional[str] = None
+
+class ChecklistItemCreate(BaseModel):
+    text: str
+    priority: Optional[str] = "medium"
+
+class ChecklistItemUpdate(BaseModel):
+    text: Optional[str] = None
+    is_checked: Optional[bool] = None
+    priority: Optional[str] = None
+    order: Optional[int] = None
+
+class ChecklistItemResponse(BaseModel):
+    id: str
+    checklist_id: str
+    text: str
+    is_checked: bool = False
+    order: int = 0
+    priority: str = "medium"
+    created_at: str
+
+class ChecklistResponse(BaseModel):
+    id: str
+    user_id: str
+    title: str
+    created_at: str
+    items: Optional[List[ChecklistItemResponse]] = []
+    item_count: Optional[int] = 0
+    completed_item_count: Optional[int] = 0
 
 def hash_password(password: str) -> str:
     try:
@@ -345,6 +390,7 @@ async def get_admin_users(
             "email": u.get("email", ""),
             "phone": u.get("phone", ""),
             "created_at": u.get("created_at", ""),
+            "last_login": u.get("last_login"),
             "is_paid": bool(u.get("is_paid", False)),
             "is_admin": bool(u.get("is_admin", False)),
             "membership_type": u.get("membership_type"),
@@ -352,6 +398,65 @@ async def get_admin_users(
             "membership_expires_at": u.get("membership_expires_at")
         })
     return result
+
+@api_router.get("/admin/users/{user_id}")
+async def get_admin_user_detail(user_id: str, admin: dict = Depends(get_current_admin)):
+    """Get detailed profile and tasks for a specific user"""
+    u = await db.users.find_one({"_id": user_id})
+    if not u:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user_info = {
+        "id": u["_id"],
+        "name": u.get("name", ""),
+        "email": u.get("email", ""),
+        "phone": u.get("phone", ""),
+        "created_at": u.get("created_at", ""),
+        "last_login": u.get("last_login"),
+        "is_paid": bool(u.get("is_paid", False)),
+        "is_admin": bool(u.get("is_admin", False)),
+        "membership_type": u.get("membership_type"),
+        "membership_plan": u.get("membership_plan"),
+        "membership_expires_at": u.get("membership_expires_at")
+    }
+    
+    user_phone = u.get("phone")
+    query_conditions = [{"created_by": user_id}, {"assigned_to_user_id": user_id}]
+    if user_phone:
+        query_conditions.append({"assignee_phone": user_phone})
+        
+    user_tasks = await db.tasks.find({"$or": query_conditions}).to_list(1000)
+    
+    task_responses = []
+    seen_ids = set()
+    for task in user_tasks:
+        t_id = task["_id"]
+        if t_id in seen_ids:
+            continue
+        seen_ids.add(t_id)
+        
+        task_responses.append({
+            "id": t_id,
+            "title": task.get("title", ""),
+            "description": task.get("description"),
+            "assignee_name": task.get("assignee_name"),
+            "assignee_phone": task.get("assignee_phone"),
+            "priority": task.get("priority", "medium"),
+            "scheduled_date": task.get("scheduled_date"),
+            "scheduled_time": task.get("scheduled_time"),
+            "status": task.get("status", "pending"),
+            "created_by": task.get("created_by", ""),
+            "created_at": task.get("created_at", ""),
+            "is_pinned": bool(task.get("is_pinned", False)),
+            "assigned_to_user_id": task.get("assigned_to_user_id"),
+            "assigned_by_name": task.get("assigned_by_name")
+        })
+        
+    return {
+        "user": user_info,
+        "tasks": task_responses,
+        "total_tasks_count": len(task_responses)
+    }
 
 @api_router.get("/admin/payments")
 async def get_admin_payments(admin: dict = Depends(get_current_admin)):
@@ -651,6 +756,9 @@ async def login(user: UserLogin):
     if not db_user or not verify_password(user.password, db_user["password"]):
         raise HTTPException(status_code=401, detail="Incorrect email or password")
     
+    now_login = datetime.now(timezone.utc).isoformat()
+    await db.users.update_one({"_id": db_user["_id"]}, {"$set": {"last_login": now_login}})
+    
     access_token = create_access_token(data={"sub": db_user["_id"]})
     
     user_response = UserResponse(
@@ -663,7 +771,8 @@ async def login(user: UserLogin):
         membership_type=db_user.get("membership_type"),
         membership_plan=db_user.get("membership_plan"),
         membership_expires_at=db_user.get("membership_expires_at"),
-        is_admin=db_user.get("is_admin", False)
+        is_admin=db_user.get("is_admin", False),
+        last_login=now_login
     )
     
     return Token(access_token=access_token, token_type="bearer", user=user_response)
@@ -680,8 +789,219 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         membership_type=current_user.get("membership_type"),
         membership_plan=current_user.get("membership_plan"),
         membership_expires_at=current_user.get("membership_expires_at"),
-        is_admin=current_user.get("is_admin", False)
+        is_admin=current_user.get("is_admin", False),
+        last_login=current_user.get("last_login")
     )
+
+# ==================== CHECKLIST ENDPOINTS ====================
+
+@api_router.post("/checklists", response_model=ChecklistResponse)
+async def create_checklist(checklist: ChecklistCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new checklist"""
+    checklist_id = f"chk_{datetime.now(timezone.utc).timestamp()}"
+    now_iso = datetime.now(timezone.utc).isoformat()
+    checklist_doc = {
+        "_id": checklist_id,
+        "user_id": current_user["id"],
+        "title": checklist.title,
+        "created_at": now_iso
+    }
+    await db.checklists.insert_one(checklist_doc)
+    return ChecklistResponse(
+        id=checklist_id,
+        user_id=current_user["id"],
+        title=checklist.title,
+        created_at=now_iso,
+        items=[],
+        item_count=0,
+        completed_item_count=0
+    )
+
+@api_router.get("/checklists", response_model=List[ChecklistResponse])
+async def get_checklists(current_user: dict = Depends(get_current_user)):
+    """Get all checklists for the current user"""
+    checklists = await db.checklists.find({"user_id": current_user["id"]}).to_list(1000)
+    result = []
+    for c in checklists:
+        items = await db.checklist_items.find({"checklist_id": c["_id"]}).to_list(1000)
+        item_count = len(items)
+        completed_count = len([i for i in items if i.get("is_checked", False)])
+        result.append(ChecklistResponse(
+            id=c["_id"],
+            user_id=c["user_id"],
+            title=c["title"],
+            created_at=c["created_at"],
+            items=[
+                ChecklistItemResponse(
+                    id=i["_id"],
+                    checklist_id=i["checklist_id"],
+                    text=i["text"],
+                    is_checked=i.get("is_checked", False),
+                    order=i.get("order", 0),
+                    priority=i.get("priority", "medium"),
+                    created_at=i["created_at"]
+                ) for i in items
+            ],
+            item_count=item_count,
+            completed_item_count=completed_count
+        ))
+    return result
+
+@api_router.get("/checklists/{checklist_id}", response_model=ChecklistResponse)
+async def get_checklist(checklist_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a single checklist with its items"""
+    checklist = await db.checklists.find_one({"_id": checklist_id, "user_id": current_user["id"]})
+    if not checklist:
+        raise HTTPException(status_code=404, detail="Checklist not found")
+    
+    items = await db.checklist_items.find({"checklist_id": checklist_id}).sort("order", 1).to_list(1000)
+    item_count = len(items)
+    completed_count = len([i for i in items if i.get("is_checked", False)])
+    
+    return ChecklistResponse(
+        id=checklist["_id"],
+        user_id=checklist["user_id"],
+        title=checklist["title"],
+        created_at=checklist["created_at"],
+        items=[
+            ChecklistItemResponse(
+                id=i["_id"],
+                checklist_id=i["checklist_id"],
+                text=i["text"],
+                is_checked=i.get("is_checked", False),
+                order=i.get("order", 0),
+                priority=i.get("priority", "medium"),
+                created_at=i["created_at"]
+            ) for i in items
+        ],
+        item_count=item_count,
+        completed_item_count=completed_count
+    )
+
+@api_router.put("/checklists/{checklist_id}", response_model=ChecklistResponse)
+async def update_checklist(checklist_id: str, update: ChecklistUpdate, current_user: dict = Depends(get_current_user)):
+    """Update/rename a checklist"""
+    existing = await db.checklists.find_one({"_id": checklist_id, "user_id": current_user["id"]})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Checklist not found")
+    
+    if update.title:
+        await db.checklists.update_one({"_id": checklist_id}, {"$set": {"title": update.title}})
+        existing["title"] = update.title
+    
+    items = await db.checklist_items.find({"checklist_id": checklist_id}).to_list(1000)
+    
+    return ChecklistResponse(
+        id=existing["_id"],
+        user_id=existing["user_id"],
+        title=existing["title"],
+        created_at=existing["created_at"],
+        items=[
+            ChecklistItemResponse(
+                id=i["_id"],
+                checklist_id=i["checklist_id"],
+                text=i["text"],
+                is_checked=i.get("is_checked", False),
+                order=i.get("order", 0),
+                priority=i.get("priority", "medium"),
+                created_at=i["created_at"]
+            ) for i in items
+        ],
+        item_count=len(items),
+        completed_item_count=len([i for i in items if i.get("is_checked", False)])
+    )
+
+@api_router.delete("/checklists/{checklist_id}")
+async def delete_checklist(checklist_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a checklist and all its items"""
+    checklist = await db.checklists.find_one({"_id": checklist_id, "user_id": current_user["id"]})
+    if not checklist:
+        raise HTTPException(status_code=404, detail="Checklist not found")
+    
+    await db.checklist_items.delete_many({"checklist_id": checklist_id})
+    await db.checklists.delete_one({"_id": checklist_id})
+    
+    return {"message": "Checklist deleted successfully"}
+
+@api_router.post("/checklists/{checklist_id}/items", response_model=ChecklistItemResponse)
+async def add_checklist_item(checklist_id: str, item: ChecklistItemCreate, current_user: dict = Depends(get_current_user)):
+    """Add an item to a checklist"""
+    checklist = await db.checklists.find_one({"_id": checklist_id, "user_id": current_user["id"]})
+    if not checklist:
+        raise HTTPException(status_code=404, detail="Checklist not found")
+    
+    existing_items_count = await db.checklist_items.count_documents({"checklist_id": checklist_id})
+    item_id = f"chkitem_{datetime.now(timezone.utc).timestamp()}"
+    now_iso = datetime.now(timezone.utc).isoformat()
+    
+    item_doc = {
+        "_id": item_id,
+        "checklist_id": checklist_id,
+        "text": item.text,
+        "is_checked": False,
+        "order": existing_items_count,
+        "priority": item.priority or "medium",
+        "created_at": now_iso
+    }
+    
+    await db.checklist_items.insert_one(item_doc)
+    
+    return ChecklistItemResponse(
+        id=item_id,
+        checklist_id=checklist_id,
+        text=item.text,
+        is_checked=False,
+        order=existing_items_count,
+        priority=item.priority or "medium",
+        created_at=now_iso
+    )
+
+@api_router.put("/checklists/{checklist_id}/items/{item_id}", response_model=ChecklistItemResponse)
+@api_router.patch("/checklists/{checklist_id}/items/{item_id}", response_model=ChecklistItemResponse)
+async def update_checklist_item(
+    checklist_id: str,
+    item_id: str,
+    item_update: ChecklistItemUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    """Update a checklist item (toggle checked, change text/priority/order)"""
+    checklist = await db.checklists.find_one({"_id": checklist_id, "user_id": current_user["id"]})
+    if not checklist:
+        raise HTTPException(status_code=404, detail="Checklist not found")
+    
+    existing_item = await db.checklist_items.find_one({"_id": item_id, "checklist_id": checklist_id})
+    if not existing_item:
+        raise HTTPException(status_code=404, detail="Checklist item not found")
+    
+    update_data = {k: v for k, v in item_update.model_dump().items() if v is not None}
+    
+    if update_data:
+        await db.checklist_items.update_one({"_id": item_id}, {"$set": update_data})
+    
+    updated_item = await db.checklist_items.find_one({"_id": item_id})
+    
+    return ChecklistItemResponse(
+        id=updated_item["_id"],
+        checklist_id=updated_item["checklist_id"],
+        text=updated_item["text"],
+        is_checked=updated_item.get("is_checked", False),
+        order=updated_item.get("order", 0),
+        priority=updated_item.get("priority", "medium"),
+        created_at=updated_item["created_at"]
+    )
+
+@api_router.delete("/checklists/{checklist_id}/items/{item_id}")
+async def delete_checklist_item(checklist_id: str, item_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a checklist item"""
+    checklist = await db.checklists.find_one({"_id": checklist_id, "user_id": current_user["id"]})
+    if not checklist:
+        raise HTTPException(status_code=404, detail="Checklist not found")
+    
+    result = await db.checklist_items.delete_one({"_id": item_id, "checklist_id": checklist_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Checklist item not found")
+    
+    return {"message": "Checklist item deleted successfully"}
 
 # ==================== TASK GROUP ENDPOINTS ====================
 
@@ -831,19 +1151,42 @@ async def get_tasks_in_group(group_id: str, current_user: dict = Depends(get_cur
             completed_at=task.get("completed_at"),
             points_earned=task.get("points_earned"),
             group_id=task.get("group_id"),
-            group_name=group["name"]
+            group_name=group["name"],
+            is_pinned=task.get("is_pinned", False)
         )
         for task in tasks
     ]
+
+async def resolve_task_assignment(assignee_phone: Optional[str], creator_id: str):
+    assigned_to_user_id = None
+    if assignee_phone and str(assignee_phone).strip():
+        phone_clean = str(assignee_phone).strip()
+        matched_user = await db.users.find_one({"phone": phone_clean})
+        if matched_user:
+            assigned_to_user_id = matched_user["_id"]
+            
+    creator = await db.users.find_one({"_id": creator_id})
+    assigned_by_name = creator.get("name", "Admin") if creator else "Admin"
+    
+    return assigned_to_user_id, assigned_by_name
 
 # ==================== TASK ENDPOINTS ====================
 
 @api_router.post("/tasks", response_model=TaskResponse)
 async def create_task(task: TaskCreate, current_user: dict = Depends(get_current_user)):
     task_id = f"task_{datetime.now(timezone.utc).timestamp()}"
+    
+    assigned_to_user_id, assigned_by_name = await resolve_task_assignment(
+        task.assignee_phone, current_user["id"]
+    )
+    
+    task_data = task.model_dump()
+    task_data["assigned_to_user_id"] = assigned_to_user_id
+    task_data["assigned_by_name"] = assigned_by_name
+    
     task_doc = {
         "_id": task_id,
-        **task.model_dump(),
+        **task_data,
         "created_by": current_user["id"],
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": None
@@ -853,7 +1196,7 @@ async def create_task(task: TaskCreate, current_user: dict = Depends(get_current
     
     return TaskResponse(
         id=task_id,
-        **task.model_dump(),
+        **task_data,
         created_by=current_user["id"],
         created_at=task_doc["created_at"],
         updated_at=None
@@ -865,16 +1208,36 @@ async def get_tasks(
     priority: Optional[str] = None,
     current_user: dict = Depends(get_current_user)
 ):
-    query = {"created_by": current_user["id"]}
+    user_phone = current_user.get("phone")
+    or_list = [
+        {"created_by": current_user["id"]},
+        {"assigned_to_user_id": current_user["id"]}
+    ]
+    if user_phone:
+        or_list.append({"assignee_phone": user_phone})
+        
+    query = {"$or": or_list}
     if status:
         query["status"] = status
     if priority:
         query["priority"] = priority
     
     tasks = await db.tasks.find(query).to_list(1000)
+    seen_ids = set()
+    result = []
     
-    return [
-        TaskResponse(
+    for task in tasks:
+        t_id = task["_id"]
+        if t_id in seen_ids:
+            continue
+        seen_ids.add(t_id)
+        
+        assigned_by_name = task.get("assigned_by_name")
+        if not assigned_by_name and task.get("created_by"):
+            creator = await db.users.find_one({"_id": task["created_by"]})
+            assigned_by_name = creator.get("name", "Unknown") if creator else None
+
+        result.append(TaskResponse(
             id=task["_id"],
             title=task["title"],
             description=task.get("description"),
@@ -889,17 +1252,35 @@ async def get_tasks(
             status=task["status"],
             created_by=task["created_by"],
             created_at=task["created_at"],
-            updated_at=task.get("updated_at")
-        )
-        for task in tasks
-    ]
+            updated_at=task.get("updated_at"),
+            completed_at=task.get("completed_at"),
+            points_earned=task.get("points_earned"),
+            group_id=task.get("group_id"),
+            is_pinned=task.get("is_pinned", False),
+            assigned_to_user_id=task.get("assigned_to_user_id"),
+            assigned_by_name=assigned_by_name
+        ))
+    return result
 
 @api_router.get("/tasks/{task_id}", response_model=TaskResponse)
 async def get_task(task_id: str, current_user: dict = Depends(get_current_user)):
-    task = await db.tasks.find_one({"_id": task_id, "created_by": current_user["id"]})
+    user_phone = current_user.get("phone")
+    query_conditions = [{"created_by": current_user["id"]}, {"assigned_to_user_id": current_user["id"]}]
+    if user_phone:
+        query_conditions.append({"assignee_phone": user_phone})
+        
+    task = await db.tasks.find_one({"_id": task_id, "$or": query_conditions})
+    if not task and current_user.get("is_admin"):
+        task = await db.tasks.find_one({"_id": task_id})
+        
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    
+        
+    assigned_by_name = task.get("assigned_by_name")
+    if not assigned_by_name and task.get("created_by"):
+        creator = await db.users.find_one({"_id": task["created_by"]})
+        assigned_by_name = creator.get("name", "Unknown") if creator else None
+
     return TaskResponse(
         id=task["_id"],
         title=task["title"],
@@ -915,22 +1296,46 @@ async def get_task(task_id: str, current_user: dict = Depends(get_current_user))
         status=task["status"],
         created_by=task["created_by"],
         created_at=task["created_at"],
-        updated_at=task.get("updated_at")
+        updated_at=task.get("updated_at"),
+        completed_at=task.get("completed_at"),
+        points_earned=task.get("points_earned"),
+        group_id=task.get("group_id"),
+        is_pinned=task.get("is_pinned", False),
+        assigned_to_user_id=task.get("assigned_to_user_id"),
+        assigned_by_name=assigned_by_name
     )
 
 @api_router.put("/tasks/{task_id}", response_model=TaskResponse)
+@api_router.patch("/tasks/{task_id}", response_model=TaskResponse)
 async def update_task(
     task_id: str,
     task_update: TaskUpdate,
     current_user: dict = Depends(get_current_user)
 ):
-    existing_task = await db.tasks.find_one({"_id": task_id, "created_by": current_user["id"]})
+    user_phone = current_user.get("phone")
+    query_conditions = [{"created_by": current_user["id"]}, {"assigned_to_user_id": current_user["id"]}]
+    if user_phone:
+        query_conditions.append({"assignee_phone": user_phone})
+        
+    query = {"_id": task_id}
+    if not current_user.get("is_admin"):
+        query["$or"] = query_conditions
+        
+    existing_task = await db.tasks.find_one(query)
     if not existing_task:
         raise HTTPException(status_code=404, detail="Task not found")
     
     update_data = {k: v for k, v in task_update.model_dump().items() if v is not None}
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
     
+    # Update assignment resolution if phone number updated/present
+    target_phone = update_data.get("assignee_phone", existing_task.get("assignee_phone"))
+    assigned_to_user_id, assigned_by_name = await resolve_task_assignment(
+        target_phone, existing_task.get("created_by", current_user["id"])
+    )
+    update_data["assigned_to_user_id"] = assigned_to_user_id
+    update_data["assigned_by_name"] = assigned_by_name
+
     # Award points when task is completed
     if task_update.status == "completed" and existing_task.get("status") != "completed":
         points = calculate_task_points(existing_task.get("priority", "medium"))
@@ -961,7 +1366,11 @@ async def update_task(
         created_at=updated_task["created_at"],
         updated_at=updated_task.get("updated_at"),
         completed_at=updated_task.get("completed_at"),
-        points_earned=updated_task.get("points_earned")
+        points_earned=updated_task.get("points_earned"),
+        group_id=updated_task.get("group_id"),
+        is_pinned=updated_task.get("is_pinned", False),
+        assigned_to_user_id=updated_task.get("assigned_to_user_id"),
+        assigned_by_name=updated_task.get("assigned_by_name")
     )
 
 @api_router.delete("/tasks/{task_id}")

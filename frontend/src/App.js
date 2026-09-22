@@ -13,10 +13,12 @@ import TaskFormPage from "./pages/TaskFormPage";
 import TaskDetailPage from "./pages/TaskDetailPage";
 import UpgradePage from "./pages/UpgradePage";
 import TaskGroupsPage from "./pages/TaskGroupsPage";
+import ChecklistPage from "./pages/ChecklistPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
 import AdminLoginPage from "./pages/AdminLoginPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
+import AdminUserDetailPage from "./pages/AdminUserDetailPage";
 import AdminPaymentsPage from "./pages/AdminPaymentsPage";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import { Toaster } from "@/components/ui/sonner";
@@ -146,6 +148,14 @@ function App() {
             }
           />
           <Route
+            path="/checklists"
+            element={
+              <ProtectedRoute>
+                <ChecklistPage user={user} setUser={setUser} />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/tasks"
             element={
               <ProtectedRoute>
@@ -191,6 +201,14 @@ function App() {
             element={
               <AdminProtectedRoute user={user}>
                 <AdminUsersPage user={user} setUser={setUser} />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users/:userId"
+            element={
+              <AdminProtectedRoute user={user}>
+                <AdminUserDetailPage user={user} setUser={setUser} />
               </AdminProtectedRoute>
             }
           />

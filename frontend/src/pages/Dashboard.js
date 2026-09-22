@@ -13,15 +13,145 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ListTodo, Calendar, CalendarDays, Clock, CheckCircle2, AlertCircle, LogOut, Plus, Bell, X, Trophy, Target, TrendingUp, Award, Sparkles, Users, Crown, Zap, CreditCard, Mic, FolderOpen, StickyNote, Trash2 } from "lucide-react";
+import { ListTodo, Calendar, CalendarDays, Clock, CheckCircle2, AlertCircle, LogOut, Plus, Bell, X, Trophy, Target, TrendingUp, Award, Sparkles, Users, Crown, Zap, CreditCard, Mic, FolderOpen, StickyNote, Trash2, Pin, CheckSquare, UserCheck, Phone } from "lucide-react";
 import { toast } from "sonner";
 import VoiceTaskCreator from "../components/VoiceTaskCreator";
+
+// Sub-component for Pinned Task live ticking countdown timer
+const PinnedTaskCountdown = ({ scheduledDate, scheduledTime }) => {
+  const calculateTimeLeft = () => {
+    if (!scheduledDate) return null;
+
+    const datePart = scheduledDate.split('T')[0];
+    const parts = datePart.split('-');
+    if (parts.length < 3) return null;
+
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    if (isNaN(year) || isNaN(month) || isNaN(day)) return null;
+
+    let hours = 23;
+    let minutes = 59;
+    let seconds = 59;
+    let hasTime = false;
+
+    if (scheduledTime && scheduledTime.trim()) {
+      const timeParts = scheduledTime.trim().split(':');
+      if (timeParts.length >= 2) {
+        const h = parseInt(timeParts[0], 10);
+        const m = parseInt(timeParts[1], 10);
+        const s = timeParts.length >= 3 ? parseInt(timeParts[2], 10) : 0;
+        if (!isNaN(h) && !isNaN(m)) {
+          hours = h;
+          minutes = m;
+          seconds = isNaN(s) ? 0 : s;
+          hasTime = true;
+        }
+      }
+    }
+
+    const targetDate = new Date(year, month, day, hours, minutes, seconds);
+    const now = new Date();
+    const diff = targetDate.getTime() - now.getTime();
+
+    // Format readable date string
+    const formattedDate = targetDate.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+
+    let formattedTime = "";
+    if (hasTime) {
+      formattedTime = targetDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    }
+
+    const formattedFull = hasTime ? `Due: ${formattedDate}, ${formattedTime}` : `Due: ${formattedDate}`;
+
+    if (diff <= 0) {
+      return { isOverdue: true, formattedFull };
+    }
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hoursRemaining = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const minsRemaining = Math.floor((diff / (1000 * 60)) % 60);
+    const secsRemaining = Math.floor((diff / 1000) % 60);
+
+    return {
+      isOverdue: false,
+      formattedFull,
+      days: String(days).padStart(2, '0'),
+      hours: String(hoursRemaining).padStart(2, '0'),
+      minutes: String(minsRemaining).padStart(2, '0'),
+      seconds: String(secsRemaining).padStart(2, '0'),
+    };
+  };
+
+  const [timeLeft, setTimeLeft] = useState(() => calculateTimeLeft());
+
+  useEffect(() => {
+    setTimeLeft(calculateTimeLeft());
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduledDate, scheduledTime]);
+
+  if (!timeLeft) return null;
+
+  return (
+    <div className="mt-2 pt-2 border-t border-amber-200/70" data-testid="pinned-countdown-container" onClick={(e) => e.stopPropagation()}>
+      <div className="text-[11px] font-medium text-amber-900 mb-1.5 flex items-center gap-1">
+        <Clock className="w-3.5 h-3.5 text-amber-600" />
+        <span>{timeLeft.formattedFull}</span>
+      </div>
+
+      {timeLeft.isOverdue ? (
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-red-100 border border-red-300 text-red-700 font-bold text-xs" data-testid="pinned-overdue-badge">
+          <AlertCircle className="w-3.5 h-3.5 text-red-600" />
+          <span>OVERDUE</span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-1.5 mt-1" data-testid="pinned-countdown-boxes">
+          <div className="flex flex-col items-center bg-amber-100/90 border border-amber-300 rounded px-2 py-0.5 min-w-[38px] shadow-xs">
+            <span className="font-mono text-xs font-bold text-amber-950">{timeLeft.days}</span>
+            <span className="text-[8px] uppercase tracking-wider text-amber-700 font-semibold">Days</span>
+          </div>
+          <span className="text-amber-500 font-bold text-xs">:</span>
+          <div className="flex flex-col items-center bg-amber-100/90 border border-amber-300 rounded px-2 py-0.5 min-w-[38px] shadow-xs">
+            <span className="font-mono text-xs font-bold text-amber-950">{timeLeft.hours}</span>
+            <span className="text-[8px] uppercase tracking-wider text-amber-700 font-semibold">Hrs</span>
+          </div>
+          <span className="text-amber-500 font-bold text-xs">:</span>
+          <div className="flex flex-col items-center bg-amber-100/90 border border-amber-300 rounded px-2 py-0.5 min-w-[38px] shadow-xs">
+            <span className="font-mono text-xs font-bold text-amber-950">{timeLeft.minutes}</span>
+            <span className="text-[8px] uppercase tracking-wider text-amber-700 font-semibold">Min</span>
+          </div>
+          <span className="text-amber-500 font-bold text-xs">:</span>
+          <div className="flex flex-col items-center bg-amber-100/90 border border-amber-300 rounded px-2 py-0.5 min-w-[38px] shadow-xs">
+            <span className="font-mono text-xs font-bold text-amber-950">{timeLeft.seconds}</span>
+            <span className="text-[8px] uppercase tracking-wider text-amber-700 font-semibold">Sec</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Dashboard = ({ user, setUser }) => {
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [recentTasks, setRecentTasks] = useState([]);
+  const [pinnedTasks, setPinnedTasks] = useState([]);
   const [groupedTasks, setGroupedTasks] = useState({});
+  const [assignedTasks, setAssignedTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCriticalAlert, setShowCriticalAlert] = useState(false);
   const [criticalTasks, setCriticalTasks] = useState([]);
@@ -177,12 +307,35 @@ const Dashboard = ({ user, setUser }) => {
       ]);
       setStats(statsResponse.data);
       
-      // Sort tasks and take top 10 for display
-      const sortedTasks = sortTasks(tasksResponse.data);
+      const allFetchedTasks = tasksResponse.data;
+      
+      // Filter pinned tasks
+      const pinned = allFetchedTasks.filter(t => t.is_pinned);
+      setPinnedTasks(sortTasks(pinned));
+
+      // Separate personal tasks vs tasks assigned to others
+      const personalTasks = allFetchedTasks.filter(t => {
+        if (!t.assignee_phone || t.assignee_phone.trim() === "") return true;
+        if (t.assigned_to_user_id && t.assigned_to_user_id === user?.id) return true;
+        if (user?.phone && t.assignee_phone === user.phone) return true;
+        return false;
+      });
+
+      const assignedToOthers = allFetchedTasks.filter(t => {
+        if (!t.assignee_phone || t.assignee_phone.trim() === "") return false;
+        if (t.assigned_to_user_id && t.assigned_to_user_id === user?.id) return false;
+        if (user?.phone && t.assignee_phone === user.phone) return false;
+        return true;
+      });
+
+      setAssignedTasks(sortTasks(assignedToOthers));
+
+      // Sort personal tasks and take top 10 for display
+      const sortedTasks = sortTasks(personalTasks);
       setRecentTasks(sortedTasks.slice(0, 10));
       
-      // Group tasks by date
-      const grouped = groupTasksByDate(tasksResponse.data);
+      // Group personal tasks by date (MY TASKS date-grouping for Group 1 only)
+      const grouped = groupTasksByDate(personalTasks);
       setGroupedTasks(grouped);
       
       const newScores = scoresResponse.data;
@@ -211,7 +364,7 @@ const Dashboard = ({ user, setUser }) => {
       setPreviousScore(newScores.monthly_score);
       
       // Find super important tasks (critical priority and not completed)
-      const superImportantTasks = tasksResponse.data.filter(
+      const superImportantTasks = allFetchedTasks.filter(
         task => task.priority === "super_important" && task.status !== "completed"
       );
       setCriticalTasks(superImportantTasks);
@@ -227,11 +380,76 @@ const Dashboard = ({ user, setUser }) => {
     }
   };
 
+  const handleUnpinTask = async (taskId, e) => {
+    if (e) e.stopPropagation();
+    try {
+      await axios.put(`${API}/tasks/${taskId}`, { is_pinned: false });
+      toast.success("Task unpinned from Dashboard");
+      fetchDashboardData();
+    } catch (error) {
+      toast.error("Failed to unpin task");
+    }
+  };
+
+  const handleTogglePin = async (taskId, currentPinnedStatus, e) => {
+    if (e) e.stopPropagation();
+    try {
+      const newPinned = !currentPinnedStatus;
+      await axios.put(`${API}/tasks/${taskId}`, { is_pinned: newPinned });
+      toast.success(newPinned ? "Task pinned to Dashboard" : "Task unpinned from Dashboard");
+      fetchDashboardData();
+    } catch (error) {
+      toast.error("Failed to update pin status");
+    }
+  };
+
   const handleLogout = () => {
     removeAuthToken();
     setUser(null);
     navigate("/");
     toast.success("Logged out successfully");
+  };
+
+  const getDueBadge = (scheduledDateStr) => {
+    if (!scheduledDateStr) return null;
+    const datePart = scheduledDateStr.split('T')[0];
+    const parts = datePart.split('-');
+    if (parts.length < 3) return null;
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    if (isNaN(year) || isNaN(month) || isNaN(day)) return null;
+
+    const taskDate = new Date(year, month, day);
+    taskDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const diffTime = taskDate.getTime() - today.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return {
+        text: "Due today",
+        colorClass: "text-blue-600 border-blue-600/30 bg-blue-600/10 font-medium"
+      };
+    } else if (diffDays === 1) {
+      return {
+        text: "Due tomorrow",
+        colorClass: "text-orange-600 border-orange-600/30 bg-orange-600/10 font-medium"
+      };
+    } else if (diffDays > 1) {
+      return {
+        text: `Due in ${diffDays} days`,
+        colorClass: "text-purple-600 border-purple-600/30 bg-purple-600/10 font-medium"
+      };
+    } else {
+      const overdueDays = Math.abs(diffDays);
+      return {
+        text: `Overdue by ${overdueDays} day${overdueDays > 1 ? 's' : ''}`,
+        colorClass: "text-red-600 border-red-600/30 bg-red-600/10 font-medium"
+      };
+    }
   };
 
   const getPriorityColor = (priority) => {
@@ -483,6 +701,14 @@ const Dashboard = ({ user, setUser }) => {
                 ALL TASKS
               </Button>
               <Button
+                variant="outline"
+                onClick={() => navigate("/checklists")}
+                data-testid="nav-checklists-btn"
+              >
+                <CheckSquare className="w-4 h-4 mr-2" />
+                CHECKLISTS
+              </Button>
+              <Button
                 variant="ghost"
                 onClick={handleLogout}
                 data-testid="logout-btn"
@@ -552,7 +778,85 @@ const Dashboard = ({ user, setUser }) => {
                 <h2 className="text-4xl md:text-5xl font-semibold tracking-tight mb-4" data-testid="dashboard-heading">
                   DASHBOARD
                 </h2>
-                <p className="text-muted-foreground">Overview of your task management</p>
+                <p className="text-muted-foreground mb-6">Overview of your task management</p>
+
+                {/* PINNED TASKS WIDGET */}
+                <div className="bg-amber-50/80 border-2 border-amber-400 p-5 rounded-sm shadow-sm" data-testid="pinned-tasks-section">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Pin className="w-5 h-5 text-amber-600 fill-amber-500" />
+                      <h3 className="text-base font-bold text-amber-950 uppercase tracking-wide">PINNED TASKS</h3>
+                      <span className="text-xs font-semibold bg-amber-200 text-amber-800 px-2 py-0.5 rounded-full" data-testid="pinned-tasks-count">
+                        {pinnedTasks.length}
+                      </span>
+                    </div>
+                  </div>
+
+                  {pinnedTasks.length === 0 ? (
+                    <div className="text-center py-6 border border-dashed border-amber-300 rounded-sm bg-amber-50/50" data-testid="no-pinned-tasks-message">
+                      <Pin className="w-8 h-8 mx-auto text-amber-400 mb-2 opacity-60" />
+                      <p className="text-sm text-amber-900 font-medium">No pinned tasks yet — pin a task from your task list to see it here</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+                      {pinnedTasks.map((task) => {
+                        const dueBadge = getDueBadge(task.scheduled_date);
+                        return (
+                          <div
+                            key={task.id}
+                            className="bg-white border border-amber-200 p-3.5 rounded-sm shadow-sm hover:border-amber-400 transition-all cursor-pointer"
+                            onClick={() => navigate(`/tasks/${task.id}`)}
+                            data-testid={`pinned-task-item-${task.id}`}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex flex-wrap items-center gap-2 mb-1">
+                                  <h4 className="font-semibold text-sm text-foreground truncate hover:text-primary">
+                                    {task.title}
+                                  </h4>
+                                  {dueBadge && (
+                                    <span className={`text-[10px] px-2 py-0.5 rounded-sm border whitespace-nowrap ${dueBadge.colorClass}`} data-testid={`due-badge-${task.id}`}>
+                                      {dueBadge.text}
+                                    </span>
+                                  )}
+                                  {task.assigned_by_name && task.created_by !== user?.id && (
+                                    <span className="text-[10px] px-2 py-0.5 rounded-sm bg-indigo-50 text-indigo-700 border border-indigo-200 font-medium whitespace-nowrap">
+                                      Assigned by {task.assigned_by_name}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-sm border ${getPriorityColor(task.priority)}`}>
+                                  {task.priority === "super_important" ? "SUPER" : task.priority}
+                                </span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => handleUnpinTask(task.id, e)}
+                                  className="h-7 w-7 p-0 text-amber-700 hover:text-red-600 hover:bg-red-50 rounded-sm"
+                                  title="Unpin task"
+                                  data-testid={`unpin-dashboard-task-${task.id}`}
+                                >
+                                  <X className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* Live Countdown Timer for Pinned Task */}
+                            {task.scheduled_date && (
+                              <PinnedTaskCountdown
+                                scheduledDate={task.scheduled_date}
+                                scheduledTime={task.scheduled_time}
+                              />
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
               
               {/* Mascot Holding Sticky Note */}
@@ -996,9 +1300,29 @@ const Dashboard = ({ user, setUser }) => {
                                   <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{task.description}</p>
                                 )}
                               </div>
-                              <span className={`text-xs uppercase tracking-wider font-medium ml-4 ${getPriorityColor(task.priority)}`}>
-                                {task.priority === "super_important" ? "🔥 SUPER" : task.priority}
-                              </span>
+                              <div className="flex items-center gap-2 ml-4">
+                                {(() => {
+                                  const dueBadge = getDueBadge(task.scheduled_date);
+                                  return dueBadge ? (
+                                    <span className={`text-xs px-2 py-0.5 rounded-sm border ${dueBadge.colorClass}`} data-testid={`due-badge-${task.id}`}>
+                                      {dueBadge.text}
+                                    </span>
+                                  ) : null;
+                                })()}
+                                <span className={`text-xs uppercase tracking-wider font-medium ${getPriorityColor(task.priority)}`}>
+                                  {task.priority === "super_important" ? "🔥 SUPER" : task.priority}
+                                </span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => handleTogglePin(task.id, task.is_pinned, e)}
+                                  className={`h-6 w-6 p-0 rounded-sm ${task.is_pinned ? "text-amber-600 bg-amber-50 hover:bg-amber-100" : "text-muted-foreground hover:text-foreground"}`}
+                                  title={task.is_pinned ? "Unpin task from Dashboard" : "Pin task to Dashboard"}
+                                  data-testid={task.is_pinned ? `unpin-mytask-btn-${task.id}` : `pin-mytask-btn-${task.id}`}
+                                >
+                                  <Pin className={`w-3.5 h-3.5 ${task.is_pinned ? "fill-amber-500 text-amber-600" : ""}`} />
+                                </Button>
+                              </div>
                             </div>
                             <div className="flex items-center justify-between gap-4">
                               <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -1006,6 +1330,11 @@ const Dashboard = ({ user, setUser }) => {
                                   <span className="flex items-center gap-1">
                                     <Calendar className="w-3 h-3" />
                                     {task.scheduled_date} {task.scheduled_time && `at ${task.scheduled_time}`}
+                                  </span>
+                                )}
+                                {task.assigned_by_name && task.created_by !== user?.id && (
+                                  <span className="px-2 py-0.5 rounded-sm bg-indigo-50 text-indigo-700 border border-indigo-200 font-medium">
+                                    Assigned by {task.assigned_by_name}
                                   </span>
                                 )}
                                 {task.assignee_name && (
@@ -1033,6 +1362,142 @@ const Dashboard = ({ user, setUser }) => {
                           </div>
                         );
                       })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Section 2: Tasks I Assigned */}
+        <div className="mb-8" data-testid="assigned-tasks-section">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h3 className="text-2xl font-medium tracking-tight flex items-center gap-2" data-testid="assigned-tasks-heading">
+                <UserCheck className="w-6 h-6 text-indigo-600" />
+                <span>TASKS I ASSIGNED</span>
+                <span className="text-sm font-semibold bg-indigo-100 text-indigo-800 px-2.5 py-0.5 rounded-full ml-1" data-testid="assigned-tasks-count">
+                  {assignedTasks.length}
+                </span>
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1">Track and oversee tasks assigned to other team members or users.</p>
+            </div>
+          </div>
+
+          {assignedTasks.length === 0 ? (
+            <div className="border border-border bg-secondary p-8 rounded-sm text-center" data-testid="no-assigned-tasks-message">
+              <UserCheck className="w-10 h-10 text-muted-foreground mx-auto mb-2 opacity-50" />
+              <p className="text-muted-foreground text-sm font-medium">No tasks assigned to others.</p>
+              <p className="text-xs text-muted-foreground mt-1">Tasks you assign to other users via phone number will appear here for tracking.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {assignedTasks.map((task) => {
+                const dueBadge = getDueBadge(task.scheduled_date);
+                return (
+                  <div
+                    key={task.id}
+                    className="border border-border bg-background p-4 rounded-sm hover:border-indigo-300 transition-colors shadow-sm"
+                    data-testid={`assigned-task-item-${task.id}`}
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="flex-1">
+                        <h5
+                          className="font-medium cursor-pointer hover:text-indigo-600 flex items-center gap-2"
+                          onClick={() => navigate(`/tasks/${task.id}`)}
+                        >
+                          <span>{task.title}</span>
+                          {task.group_name && (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                              {task.group_name}
+                            </span>
+                          )}
+                        </h5>
+                        {task.description && (
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{task.description}</p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 ml-4">
+                        {dueBadge && (
+                          <span className={`text-xs px-2 py-0.5 rounded-sm border ${dueBadge.colorClass}`} data-testid={`due-badge-${task.id}`}>
+                            {dueBadge.text}
+                          </span>
+                        )}
+                        <span className={`text-xs uppercase tracking-wider font-medium ${getPriorityColor(task.priority)}`}>
+                          {task.priority === "super_important" ? "🔥 SUPER" : task.priority}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => handleTogglePin(task.id, task.is_pinned, e)}
+                          className={`h-6 w-6 p-0 rounded-sm ${task.is_pinned ? "text-amber-600 bg-amber-50 hover:bg-amber-100" : "text-muted-foreground hover:text-foreground"}`}
+                          title={task.is_pinned ? "Unpin task from Dashboard" : "Pin task to Dashboard"}
+                          data-testid={task.is_pinned ? `unpin-assigned-btn-${task.id}` : `pin-assigned-btn-${task.id}`}
+                        >
+                          <Pin className={`w-3.5 h-3.5 ${task.is_pinned ? "fill-amber-500 text-amber-600" : ""}`} />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
+                      <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+                        {task.scheduled_date && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-3.5 h-3.5 text-gray-400" />
+                            <span>{task.scheduled_date} {task.scheduled_time && `at ${task.scheduled_time}`}</span>
+                          </span>
+                        )}
+
+                        {task.assignee_name ? (
+                          <span className="flex items-center gap-1 text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-sm font-medium">
+                            <Users className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>Assigned to: <strong>{task.assignee_name}</strong></span>
+                          </span>
+                        ) : task.assignee_phone ? (
+                          <span className="flex items-center gap-1 text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-sm font-medium">
+                            <Phone className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>Assigned to: <strong>{task.assignee_phone}</strong></span>
+                          </span>
+                        ) : null}
+
+                        {task.assignee_name && task.assignee_phone && (
+                          <a
+                            href={`tel:${task.assignee_phone}`}
+                            className="flex items-center gap-1 text-blue-600 hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Phone className="w-3.5 h-3.5" />
+                            <span>{task.assignee_phone}</span>
+                          </a>
+                        )}
+
+                        {task.location_address && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                            <span>{task.location_address}</span>
+                          </span>
+                        )}
+                      </div>
+
+                      <Select
+                        value={task.status}
+                        onValueChange={(value) => handleStatusChange(task.id, value)}
+                      >
+                        <SelectTrigger
+                          className="w-32 h-7 text-xs uppercase"
+                          data-testid={`assigned-status-select-${task.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="in_progress">In Progress</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 );

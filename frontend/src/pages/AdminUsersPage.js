@@ -4,7 +4,7 @@ import axios from "axios";
 import { API, removeAuthToken } from "../App";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Users, Search, CreditCard, LogOut, ShieldCheck, LayoutDashboard, Crown, Zap, X } from "lucide-react";
+import { Users, Search, CreditCard, LogOut, ShieldCheck, LayoutDashboard, Crown, Zap, X, Eye } from "lucide-react";
 import { toast } from "sonner";
 
 const AdminUsersPage = ({ user, setUser }) => {
@@ -56,6 +56,21 @@ const AdminUsersPage = ({ user, setUser }) => {
         year: "numeric",
         month: "short",
         day: "numeric"
+      });
+    } catch {
+      return isoStr;
+    }
+  };
+
+  const formatDateTime = (isoStr) => {
+    if (!isoStr) return "Never logged in";
+    try {
+      return new Date(isoStr).toLocaleString("en-IN", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
       });
     } catch {
       return isoStr;
@@ -179,11 +194,17 @@ const AdminUsersPage = ({ user, setUser }) => {
                     <th className="px-6 py-3">Plan</th>
                     <th className="px-6 py-3">Paid Status</th>
                     <th className="px-6 py-3">Joined Date</th>
+                    <th className="px-6 py-3">Last Login</th>
+                    <th className="px-6 py-3">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 text-sm text-gray-700">
                   {usersList.map((u) => (
-                    <tr key={u.id} className="hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={u.id}
+                      onClick={() => navigate(`/admin/users/${u.id}`)}
+                      className="hover:bg-gray-50 transition-colors cursor-pointer"
+                    >
                       <td className="px-6 py-4 font-medium text-gray-900 flex items-center space-x-2">
                         <span>{u.name}</span>
                         {u.is_admin && (
@@ -221,6 +242,23 @@ const AdminUsersPage = ({ user, setUser }) => {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">{formatDate(u.created_at)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-600">
+                        {formatDateTime(u.last_login)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/admin/users/${u.id}`);
+                          }}
+                          className="flex items-center space-x-1 text-xs text-primary border-primary/30 hover:bg-primary/5"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>View</span>
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

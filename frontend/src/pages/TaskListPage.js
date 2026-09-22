@@ -4,7 +4,7 @@ import axios from "axios";
 import { API, removeAuthToken } from "../App";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Phone, MapPin, LogOut, Plus, ArrowLeft } from "lucide-react";
+import { Calendar, Phone, MapPin, LogOut, Plus, ArrowLeft, Pin, CheckSquare, UserCheck, Users } from "lucide-react";
 import { toast } from "sonner";
 
 const TaskListPage = ({ user, setUser }) => {
@@ -14,6 +14,32 @@ const TaskListPage = ({ user, setUser }) => {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState(searchParams.get("status") || "all");
   const [priorityFilter, setPriorityFilter] = useState(searchParams.get("priority") || "all");
+
+  const personalTasks = tasks.filter((t) => {
+    if (!t.assignee_phone || t.assignee_phone.trim() === "") return true;
+    if (t.assigned_to_user_id && t.assigned_to_user_id === user?.id) return true;
+    if (user?.phone && t.assignee_phone === user.phone) return true;
+    return false;
+  });
+
+  const assignedTasks = tasks.filter((t) => {
+    if (!t.assignee_phone || t.assignee_phone.trim() === "") return false;
+    if (t.assigned_to_user_id && t.assigned_to_user_id === user?.id) return false;
+    if (user?.phone && t.assignee_phone === user.phone) return false;
+    return true;
+  });
+
+  const handleTogglePin = async (e, task) => {
+    e.stopPropagation();
+    try {
+      const newPinned = !task.is_pinned;
+      await axios.put(`${API}/tasks/${task.id}`, { is_pinned: newPinned });
+      setTasks(prev => prev.map(t => t.id === task.id ? { ...t, is_pinned: newPinned } : t));
+      toast.success(newPinned ? "Task pinned to Dashboard" : "Task unpinned from Dashboard");
+    } catch (error) {
+      toast.error("Failed to update pin status");
+    }
+  };
 
   // Priority order for sorting (lower number = higher priority)
   const priorityOrder = {
@@ -65,6 +91,48 @@ const TaskListPage = ({ user, setUser }) => {
     toast.success("Logged out successfully");
   };
 
+  const getDueBadge = (scheduledDateStr) => {
+    if (!scheduledDateStr) return null;
+    const datePart = scheduledDateStr.split('T')[0];
+    const parts = datePart.split('-');
+    if (parts.length < 3) return null;
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    if (isNaN(year) || isNaN(month) || isNaN(day)) return null;
+
+    const taskDate = new Date(year, month, day);
+    taskDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const diffTime = taskDate.getTime() - today.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return {
+        text: "Due today",
+        colorClass: "text-blue-600 border-blue-600/30 bg-blue-600/10 font-medium"
+      };
+    } else if (diffDays === 1) {
+      return {
+        text: "Due tomorrow",
+        colorClass: "text-orange-600 border-orange-600/30 bg-orange-600/10 font-medium"
+      };
+    } else if (diffDays > 1) {
+      return {
+        text: `Due in ${diffDays} days`,
+        colorClass: "text-purple-600 border-purple-600/30 bg-purple-600/10 font-medium"
+      };
+    } else {
+      const overdueDays = Math.abs(diffDays);
+      return {
+        text: `Overdue by ${overdueDays} day${overdueDays > 1 ? 's' : ''}`,
+        colorClass: "text-red-600 border-red-600/30 bg-red-600/10 font-medium"
+      };
+    }
+  };
+
   const getPriorityColor = (priority) => {
     switch (priority) {
       case "high":
@@ -114,6 +182,14 @@ const TaskListPage = ({ user, setUser }) => {
               DASHBOARD
             </Button>
             <Button
+              variant="outline"
+              onClick={() => navigate("/checklists")}
+              data-testid="nav-checklists-btn"
+            >
+              <CheckSquare className="w-4 h-4 mr-2" />
+              CHECKLISTS
+            </Button>
+            <Button
               variant="ghost"
               onClick={handleLogout}
               data-testid="logout-btn"
@@ -130,7 +206,7 @@ const TaskListPage = ({ user, setUser }) => {
             <h2 className="text-4xl md:text-5xl font-semibold tracking-tight mb-2" data-testid="tasklist-heading">
               ALL TASKS
             </h2>
-            <p className="text-muted-foreground">{tasks.length} tasks found</p>
+            <p className="text-muted-foreground">{tasks.length} tasks found ({personalTasks.length} personal, {assignedTasks.length} assigned)</p>
           </div>
           <Button
             onClick={() => navigate("/tasks/new")}
@@ -180,58 +256,191 @@ const TaskListPage = ({ user, setUser }) => {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4">
-            {tasks.map((task) => (
-              <div
-                key={task.id}
-                className="border border-border bg-background p-6 rounded-sm hover:border-primary/50 transition-colors cursor-pointer"
-                onClick={() => navigate(`/tasks/${task.id}`)}
-                data-testid={`task-card-${task.id}`}
-              >
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex-1">
-                    <h3 className="text-xl font-medium mb-2">{task.title}</h3>
-                    {task.description && (
-                      <p className="text-sm text-muted-foreground mb-3">{task.description}</p>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <span className={`text-xs uppercase tracking-wider font-medium px-3 py-1 rounded-sm border ${getPriorityColor(task.priority)}`}>
-                      {task.priority}
-                    </span>
-                    <span className={`text-xs uppercase tracking-wider font-medium px-3 py-1 rounded-sm border ${getStatusColor(task.status)}`}>
-                      {task.status.replace("_", " ")}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                  {task.scheduled_date && (
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4" />
-                      <span>{task.scheduled_date} {task.scheduled_time && `at ${task.scheduled_time}`}</span>
-                    </div>
-                  )}
-                  {task.assignee_name && (
-                    <div className="flex items-center gap-2">
-                      <span>Assigned to: <strong>{task.assignee_name}</strong></span>
-                    </div>
-                  )}
-                  {task.assignee_phone && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4" />
-                      <span>{task.assignee_phone}</span>
-                    </div>
-                  )}
-                  {task.location_address && (
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4" />
-                      <span>{task.location_address}</span>
-                    </div>
-                  )}
-                </div>
+          <div className="space-y-12">
+            {/* Section 1: MY TASKS */}
+            <div data-testid="my-tasks-section">
+              <div className="flex items-center justify-between mb-4 border-b border-border pb-3">
+                <h3 className="text-2xl font-bold tracking-tight flex items-center gap-2" data-testid="mytasks-heading">
+                  <CheckSquare className="w-6 h-6 text-primary" />
+                  <span>MY TASKS</span>
+                  <span className="text-sm font-semibold bg-primary/10 text-primary px-2.5 py-0.5 rounded-full ml-1" data-testid="mytasks-count">
+                    {personalTasks.length}
+                  </span>
+                </h3>
               </div>
-            ))}
+
+              {personalTasks.length === 0 ? (
+                <div className="border border-border bg-secondary p-8 rounded-sm text-center" data-testid="no-personal-tasks">
+                  <p className="text-muted-foreground text-sm">No personal tasks found.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {personalTasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className="border border-border bg-background p-6 rounded-sm hover:border-primary/50 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/tasks/${task.id}`)}
+                      data-testid={`task-card-${task.id}`}
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <h3 className="text-xl font-medium mb-2">{task.title}</h3>
+                          {task.description && (
+                            <p className="text-sm text-muted-foreground mb-3">{task.description}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {(() => {
+                            const dueBadge = getDueBadge(task.scheduled_date);
+                            return dueBadge ? (
+                              <span className={`text-xs uppercase tracking-wider font-medium px-3 py-1 rounded-sm border ${dueBadge.colorClass}`} data-testid={`due-badge-${task.id}`}>
+                                {dueBadge.text}
+                              </span>
+                            ) : null;
+                          })()}
+                          <span className={`text-xs uppercase tracking-wider font-medium px-3 py-1 rounded-sm border ${getPriorityColor(task.priority)}`}>
+                            {task.priority}
+                          </span>
+                          <span className={`text-xs uppercase tracking-wider font-medium px-3 py-1 rounded-sm border ${getStatusColor(task.status)}`}>
+                            {task.status.replace("_", " ")}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => handleTogglePin(e, task)}
+                            className={`h-7 px-2 flex items-center gap-1 text-xs ${task.is_pinned ? "bg-amber-50 border-amber-500 text-amber-700 hover:bg-amber-100" : "text-muted-foreground hover:text-foreground"}`}
+                            title={task.is_pinned ? "Unpin task from Dashboard" : "Pin task to Dashboard"}
+                            data-testid={task.is_pinned ? `unpin-task-btn-${task.id}` : `pin-task-btn-${task.id}`}
+                          >
+                            <Pin className={`w-3.5 h-3.5 ${task.is_pinned ? "fill-amber-500 text-amber-600" : ""}`} />
+                            <span>{task.is_pinned ? "Pinned" : "Pin"}</span>
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                        {task.scheduled_date && (
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
+                            <span>{task.scheduled_date} {task.scheduled_time && `at ${task.scheduled_time}`}</span>
+                          </div>
+                        )}
+                        {task.assigned_by_name && task.created_by !== user?.id && (
+                          <div className="flex items-center gap-2 text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-sm font-medium text-xs">
+                            <UserCheck className="w-3.5 h-3.5" />
+                            <span>Assigned by: <strong>{task.assigned_by_name}</strong></span>
+                          </div>
+                        )}
+                        {task.location_address && (
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4" />
+                            <span>{task.location_address}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Section 2: TASKS I ASSIGNED */}
+            <div data-testid="tasks-i-assigned-section">
+              <div className="flex items-center justify-between mb-4 border-b border-border pb-3">
+                <h3 className="text-2xl font-bold tracking-tight flex items-center gap-2" data-testid="assignedtasks-heading">
+                  <UserCheck className="w-6 h-6 text-indigo-600" />
+                  <span>TASKS I ASSIGNED</span>
+                  <span className="text-sm font-semibold bg-indigo-100 text-indigo-800 px-2.5 py-0.5 rounded-full ml-1" data-testid="assignedtasks-count">
+                    {assignedTasks.length}
+                  </span>
+                </h3>
+              </div>
+
+              {assignedTasks.length === 0 ? (
+                <div className="border border-border bg-secondary p-8 rounded-sm text-center" data-testid="no-assigned-tasks">
+                  <p className="text-muted-foreground text-sm">No tasks assigned to others.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {assignedTasks.map((task) => (
+                    <div
+                      key={task.id}
+                      className="border border-border bg-background p-6 rounded-sm hover:border-indigo-300 transition-colors cursor-pointer shadow-sm"
+                      onClick={() => navigate(`/tasks/${task.id}`)}
+                      data-testid={`assigned-task-card-${task.id}`}
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <h3 className="text-xl font-medium mb-2">{task.title}</h3>
+                          {task.description && (
+                            <p className="text-sm text-muted-foreground mb-3">{task.description}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {(() => {
+                            const dueBadge = getDueBadge(task.scheduled_date);
+                            return dueBadge ? (
+                              <span className={`text-xs uppercase tracking-wider font-medium px-3 py-1 rounded-sm border ${dueBadge.colorClass}`} data-testid={`due-badge-${task.id}`}>
+                                {dueBadge.text}
+                              </span>
+                            ) : null;
+                          })()}
+                          <span className={`text-xs uppercase tracking-wider font-medium px-3 py-1 rounded-sm border ${getPriorityColor(task.priority)}`}>
+                            {task.priority}
+                          </span>
+                          <span className={`text-xs uppercase tracking-wider font-medium px-3 py-1 rounded-sm border ${getStatusColor(task.status)}`}>
+                            {task.status.replace("_", " ")}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => handleTogglePin(e, task)}
+                            className={`h-7 px-2 flex items-center gap-1 text-xs ${task.is_pinned ? "bg-amber-50 border-amber-500 text-amber-700 hover:bg-amber-100" : "text-muted-foreground hover:text-foreground"}`}
+                            title={task.is_pinned ? "Unpin task from Dashboard" : "Pin task to Dashboard"}
+                            data-testid={task.is_pinned ? `unpin-assigned-task-btn-${task.id}` : `pin-assigned-task-btn-${task.id}`}
+                          >
+                            <Pin className={`w-3.5 h-3.5 ${task.is_pinned ? "fill-amber-500 text-amber-600" : ""}`} />
+                            <span>{task.is_pinned ? "Pinned" : "Pin"}</span>
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                        {task.scheduled_date && (
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-gray-400" />
+                            <span>{task.scheduled_date} {task.scheduled_time && `at ${task.scheduled_time}`}</span>
+                          </div>
+                        )}
+                        {task.assignee_name ? (
+                          <div className="flex items-center gap-2 text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-sm font-medium text-xs">
+                            <Users className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>Assigned to: <strong>{task.assignee_name}</strong></span>
+                          </div>
+                        ) : task.assignee_phone ? (
+                          <div className="flex items-center gap-2 text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-sm font-medium text-xs">
+                            <Phone className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>Assigned to: <strong>{task.assignee_phone}</strong></span>
+                          </div>
+                        ) : null}
+                        {task.assignee_name && task.assignee_phone && (
+                          <div className="flex items-center gap-1.5 text-blue-600">
+                            <Phone className="w-4 h-4" />
+                            <span>{task.assignee_phone}</span>
+                          </div>
+                        )}
+                        {task.location_address && (
+                          <div className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-gray-400" />
+                            <span>{task.location_address}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

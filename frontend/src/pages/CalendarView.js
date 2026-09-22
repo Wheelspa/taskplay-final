@@ -23,6 +23,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Flame,
+  ArrowLeft,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -259,7 +260,7 @@ const CalendarView = ({ user, setUser }) => {
                 onClick={() => navigate("/dashboard")}
                 data-testid="dashboard-btn"
               >
-                <LayoutDashboard className="w-4 h-4 mr-2" />
+                <ArrowLeft className="w-4 h-4 mr-2" />
                 DASHBOARD
               </Button>
               <Button

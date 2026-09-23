@@ -111,7 +111,7 @@ const ForgotPasswordPage = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/auth")}
+            onClick={() => navigate(-1)}
             className="text-muted-foreground hover:text-foreground flex items-center gap-1.5 p-0 h-auto hover:bg-transparent"
             data-testid="back-to-login-btn"
           >

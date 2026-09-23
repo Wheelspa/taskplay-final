@@ -5,8 +5,8 @@ import { API, removeAuthToken } from "../App";
 import { Button } from "@/components/ui/button";
 import { 
   Users, IndianRupee, CheckSquare, Zap, Crown, CreditCard, UserX, LogOut, 
-  ShieldCheck, LayoutDashboard, Plus, Calendar, MapPin, Phone, Trash2, Edit, 
-  Clock, Check, UserCheck
+  ShieldCheck, LayoutDashboard, Calendar, MapPin, Phone, Trash2, Edit, 
+  UserCheck
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -41,18 +41,6 @@ const AdminDashboardPage = ({ user, setUser }) => {
       toast.error("Failed to load admin tasks");
     } finally {
       setTasksLoading(false);
-    }
-  };
-
-  const handleStatusChange = async (taskId, currentStatus) => {
-    const newStatus = currentStatus === "completed" ? "pending" : "completed";
-    try {
-      await axios.put(`${API}/tasks/${taskId}`, { status: newStatus });
-      toast.success(newStatus === "completed" ? "Task marked as completed! 🎉" : "Task marked as pending");
-      fetchAdminTasks();
-      fetchDashboardData();
-    } catch (err) {
-      toast.error("Failed to update task status");
     }
   };
 
@@ -113,14 +101,7 @@ const AdminDashboardPage = ({ user, setUser }) => {
     }
   };
 
-  // Filter tasks into Personal vs Assigned to Others
-  const personalTasks = tasks.filter((t) => {
-    if (!t.assignee_phone || t.assignee_phone.trim() === "") return true;
-    if (t.assigned_to_user_id && t.assigned_to_user_id === user?.id) return true;
-    if (user?.phone && t.assignee_phone === user.phone) return true;
-    return false;
-  });
-
+  // Filter tasks assigned to others
   const assignedTasks = tasks.filter((t) => {
     if (!t.assignee_phone || t.assignee_phone.trim() === "") return false;
     if (t.assigned_to_user_id && t.assigned_to_user_id === user?.id) return false;
@@ -295,129 +276,7 @@ const AdminDashboardPage = ({ user, setUser }) => {
           )}
         </div>
 
-        {/* Section 1: Admin Personal Tasks */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-6 border-b border-gray-200 mb-6 gap-4">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 flex items-center space-x-2">
-                <CheckSquare className="w-5 h-5 text-primary" />
-                <span>My Personal Tasks</span>
-              </h2>
-              <p className="text-sm text-gray-500 mt-0.5">Manage, track, and complete your tasks directly from the admin panel.</p>
-            </div>
-            <Button
-              onClick={() => navigate("/tasks/new?returnTo=/admin/dashboard")}
-              className="bg-primary hover:bg-primary/90 text-white flex items-center space-x-2"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add New Task</span>
-            </Button>
-          </div>
-
-          {tasksLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : personalTasks.length === 0 ? (
-            <div className="text-center py-12 text-gray-500 space-y-3">
-              <CheckSquare className="w-12 h-12 text-gray-300 mx-auto" />
-              <p className="text-base font-medium text-gray-700">No personal tasks found</p>
-              <p className="text-sm text-gray-500">Click "Add New Task" above to create your first personal task.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {personalTasks.map((task) => {
-                const isCompleted = task.status === "completed";
-                return (
-                  <div
-                    key={task.id}
-                    className={`p-4 rounded-lg border transition-all ${
-                      isCompleted
-                        ? "bg-gray-50 border-gray-200 opacity-75"
-                        : "bg-white border-gray-200 hover:border-gray-300 shadow-sm"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start space-x-3 flex-1">
-                        <button
-                          onClick={() => handleStatusChange(task.id, task.status)}
-                          className={`mt-1 w-5 h-5 rounded flex items-center justify-center border transition-colors ${
-                            isCompleted
-                              ? "bg-emerald-500 border-emerald-500 text-white"
-                              : "border-gray-300 hover:border-primary"
-                          }`}
-                          title={isCompleted ? "Mark as Pending" : "Mark as Completed"}
-                        >
-                          {isCompleted && <Check className="w-3.5 h-3.5" />}
-                        </button>
-
-                        <div className="space-y-1.5 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h3 className={`font-semibold text-base ${isCompleted ? "line-through text-gray-500" : "text-gray-900"}`}>
-                              {task.title}
-                            </h3>
-                            {getPriorityBadge(task.priority)}
-                            {task.group_name && (
-                              <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                                {task.group_name}
-                              </span>
-                            )}
-                          </div>
-
-                          {task.description && (
-                            <p className={`text-sm ${isCompleted ? "text-gray-400" : "text-gray-600"}`}>
-                              {task.description}
-                            </p>
-                          )}
-
-                          <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500 pt-1">
-                            {task.scheduled_date && (
-                              <span className="flex items-center space-x-1">
-                                <Calendar className="w-3.5 h-3.5 text-gray-400" />
-                                <span>{task.scheduled_date} {task.scheduled_time ? `at ${task.scheduled_time}` : ""}</span>
-                              </span>
-                            )}
-
-                            {task.location_address && (
-                              <span className="flex items-center space-x-1">
-                                <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                                <span>{task.location_address}</span>
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Action buttons */}
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate(`/tasks/${task.id}/edit?returnTo=/admin/dashboard`)}
-                          className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700"
-                          title="Edit Task"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteTask(task.id)}
-                          className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
-                          title="Delete Task"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Section 2: Tasks I Assigned */}
+        {/* Tasks I Assigned */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-6 border-b border-gray-200 mb-6 gap-4">
             <div>

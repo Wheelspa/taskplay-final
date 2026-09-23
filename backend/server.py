@@ -304,6 +304,25 @@ class ChecklistResponse(BaseModel):
     item_count: Optional[int] = 0
     completed_item_count: Optional[int] = 0
 
+# Quick Task Models
+class QuickTaskCreate(BaseModel):
+    text: str
+    is_checked: Optional[bool] = False
+    order: Optional[int] = 0
+
+class QuickTaskUpdate(BaseModel):
+    text: Optional[str] = None
+    is_checked: Optional[bool] = None
+    order: Optional[int] = None
+
+class QuickTaskResponse(BaseModel):
+    id: str
+    user_id: str
+    text: str
+    is_checked: bool = False
+    order: int = 0
+    created_at: str
+
 def hash_password(password: str) -> str:
     try:
         return pwd_context.hash(password)
@@ -1167,6 +1186,83 @@ async def delete_checklist_item(checklist_id: str, item_id: str, current_user: d
     
     return {"message": "Checklist item deleted successfully"}
 
+# ==================== QUICK TASKS ENDPOINTS ====================
+
+@api_router.get("/quick-tasks", response_model=List[QuickTaskResponse])
+async def get_quick_tasks(current_user: dict = Depends(get_current_user)):
+    """Get all quick tasks for the current user"""
+    tasks = await db.quick_tasks.find({"user_id": current_user["id"]}).sort([("order", 1), ("created_at", 1)]).to_list(1000)
+    return [
+        QuickTaskResponse(
+            id=t["_id"],
+            user_id=t["user_id"],
+            text=t["text"],
+            is_checked=t.get("is_checked", False),
+            order=t.get("order", 0),
+            created_at=t["created_at"]
+        ) for t in tasks
+    ]
+
+@api_router.post("/quick-tasks", response_model=QuickTaskResponse)
+async def create_quick_task(qt: QuickTaskCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new quick task"""
+    qt_id = f"qt_{datetime.now(timezone.utc).timestamp()}"
+    now_iso = datetime.now(timezone.utc).isoformat()
+    qt_doc = {
+        "_id": qt_id,
+        "user_id": current_user["id"],
+        "text": qt.text,
+        "is_checked": qt.is_checked if qt.is_checked is not None else False,
+        "order": qt.order if qt.order is not None else 0,
+        "created_at": now_iso
+    }
+    await db.quick_tasks.insert_one(qt_doc)
+    return QuickTaskResponse(
+        id=qt_id,
+        user_id=current_user["id"],
+        text=qt.text,
+        is_checked=qt_doc["is_checked"],
+        order=qt_doc["order"],
+        created_at=now_iso
+    )
+
+@api_router.put("/quick-tasks/{qt_id}", response_model=QuickTaskResponse)
+@api_router.patch("/quick-tasks/{qt_id}", response_model=QuickTaskResponse)
+async def update_quick_task(qt_id: str, qt_update: QuickTaskUpdate, current_user: dict = Depends(get_current_user)):
+    """Update a quick task"""
+    existing = await db.quick_tasks.find_one({"_id": qt_id, "user_id": current_user["id"]})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Quick task not found")
+    
+    update_data = {}
+    if qt_update.text is not None:
+        update_data["text"] = qt_update.text
+    if qt_update.is_checked is not None:
+        update_data["is_checked"] = qt_update.is_checked
+    if qt_update.order is not None:
+        update_data["order"] = qt_update.order
+
+    if update_data:
+        await db.quick_tasks.update_one({"_id": qt_id}, {"$set": update_data})
+    
+    updated = await db.quick_tasks.find_one({"_id": qt_id})
+    return QuickTaskResponse(
+        id=updated["_id"],
+        user_id=updated["user_id"],
+        text=updated["text"],
+        is_checked=updated.get("is_checked", False),
+        order=updated.get("order", 0),
+        created_at=updated["created_at"]
+    )
+
+@api_router.delete("/quick-tasks/{qt_id}")
+async def delete_quick_task(qt_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a quick task"""
+    result = await db.quick_tasks.delete_one({"_id": qt_id, "user_id": current_user["id"]})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Quick task not found")
+    return {"message": "Quick task deleted successfully"}
+
 # ==================== TASK GROUP ENDPOINTS ====================
 
 @api_router.post("/task-groups", response_model=TaskGroupResponse)
@@ -2009,7 +2105,7 @@ logger = logging.getLogger(__name__)
 
 async def init_admin_user():
     try:
-        admin_email = "warke.sandeep@gmail.com"
+        admin_email = "wheelspa.admin@gmail.com"
         existing_admin = await db.users.find_one({"email": admin_email})
         if not existing_admin:
             now = datetime.now(timezone.utc)
@@ -2018,7 +2114,7 @@ async def init_admin_user():
             admin_doc = {
                 "_id": admin_id,
                 "email": admin_email,
-                "password": hash_password("Admin@12345"),
+                "password": hash_password("ChangeMe123!"),
                 "name": "Admin",
                 "phone": "0000000000",
                 "is_admin": True,
@@ -2029,13 +2125,22 @@ async def init_admin_user():
                 "created_at": now.isoformat()
             }
             await db.users.insert_one(admin_doc)
-            logger.info("Admin user created")
+            logger.info("Admin user created (wheelspa.admin@gmail.com)")
         else:
             await db.users.update_one(
                 {"_id": existing_admin["_id"]},
-                {"$set": {"is_admin": True}}
+                {"$set": {"is_admin": True, "name": "Admin"}}
             )
             logger.info("Admin user already exists, is_admin set to True")
+
+        # Update Sandeep user account to be a regular user with updated name
+        sandeep_user = await db.users.find_one({"email": "warke.sandeep@gmail.com"})
+        if sandeep_user:
+            await db.users.update_one(
+                {"_id": sandeep_user["_id"]},
+                {"$set": {"is_admin": False, "name": "Sandeep Warke"}}
+            )
+            logger.info("Updated warke.sandeep@gmail.com: is_admin=False, name='Sandeep Warke'")
     except Exception as e:
         logger.error(f"Error initializing admin user: {e}")
 

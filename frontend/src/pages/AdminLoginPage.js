@@ -87,7 +87,17 @@ const AdminLoginPage = ({ setUser }) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="admin-password">Password</Label>
+            <div className="flex justify-between items-center">
+              <Label htmlFor="admin-password">Password</Label>
+              <button
+                type="button"
+                onClick={() => navigate("/forgot-password")}
+                className="text-xs font-medium text-primary hover:underline"
+                data-testid="admin-forgot-password-link"
+              >
+                Forgot password?
+              </button>
+            </div>
             <div className="relative">
               <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input

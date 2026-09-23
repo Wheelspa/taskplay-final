@@ -162,52 +162,109 @@ const Dashboard = ({ user, setUser }) => {
   const [showVoiceCreator, setShowVoiceCreator] = useState(false);
   const [taskGroups, setTaskGroups] = useState([]);
   
-  // Sticky notes state
-  const [stickyNotes, setStickyNotes] = useState(() => {
-    const saved = localStorage.getItem('taskplay_sticky_notes');
-    return saved ? JSON.parse(saved) : [];
-  });
+  // Sticky notes (Quick Tasks) state
+  const [stickyNotes, setStickyNotes] = useState([]);
   const [newStickyNote, setNewStickyNote] = useState("");
 
-  // Save sticky notes to localStorage
-  useEffect(() => {
-    localStorage.setItem('taskplay_sticky_notes', JSON.stringify(stickyNotes));
-  }, [stickyNotes]);
+  const fetchQuickTasks = async () => {
+    try {
+      const response = await axios.get(`${API}/quick-tasks`);
+      let fetchedTasks = response.data;
 
-  const addStickyNote = () => {
+      // One-time migration of localStorage quick tasks if backend list is empty
+      const localSaved = localStorage.getItem('taskplay_sticky_notes');
+      if (localSaved) {
+        try {
+          const parsedLocal = JSON.parse(localSaved);
+          if (Array.isArray(parsedLocal) && parsedLocal.length > 0 && fetchedTasks.length === 0) {
+            const migratedTasks = [];
+            for (const item of parsedLocal) {
+              if (item.text && item.text.trim()) {
+                const res = await axios.post(`${API}/quick-tasks`, {
+                  text: item.text.trim(),
+                  is_checked: Boolean(item.completed || item.is_checked)
+                });
+                migratedTasks.push(res.data);
+              }
+            }
+            fetchedTasks = migratedTasks;
+          }
+        } catch (e) {
+          console.error("Migration error", e);
+        } finally {
+          localStorage.removeItem('taskplay_sticky_notes');
+        }
+      }
+
+      setStickyNotes(fetchedTasks);
+    } catch (error) {
+      console.error("Failed to fetch quick tasks");
+    }
+  };
+
+  const addStickyNote = async () => {
     if (!newStickyNote.trim()) return;
     if (stickyNotes.length >= 10) {
       toast.error("Maximum 10 quick tasks allowed!");
       return;
     }
-    const newNote = {
-      id: Date.now(),
-      text: newStickyNote.trim(),
-      completed: false
-    };
-    setStickyNotes([...stickyNotes, newNote]);
+    const textToAdd = newStickyNote.trim();
     setNewStickyNote("");
-    toast.success("Quick task added!");
+    try {
+      const response = await axios.post(`${API}/quick-tasks`, { text: textToAdd });
+      setStickyNotes([...stickyNotes, response.data]);
+      toast.success("Quick task added!");
+    } catch (error) {
+      toast.error("Failed to add quick task");
+    }
   };
 
-  const toggleStickyNote = (id) => {
-    setStickyNotes(stickyNotes.map(note => 
-      note.id === id ? { ...note, completed: !note.completed } : note
+  const toggleStickyNote = async (id) => {
+    const target = stickyNotes.find(note => note.id === id || note._id === id);
+    if (!target) return;
+
+    const newCheckedState = !(target.is_checked || target.completed);
+    
+    // Optimistic UI update
+    setStickyNotes(stickyNotes.map(note =>
+      (note.id === id || note._id === id) ? { ...note, is_checked: newCheckedState, completed: newCheckedState } : note
     ));
+
+    try {
+      await axios.put(`${API}/quick-tasks/${id}`, { is_checked: newCheckedState });
+    } catch (error) {
+      toast.error("Failed to update quick task");
+      fetchQuickTasks();
+    }
   };
 
-  const deleteStickyNote = (id) => {
-    setStickyNotes(stickyNotes.filter(note => note.id !== id));
+  const deleteStickyNote = async (id) => {
+    // Optimistic UI update
+    setStickyNotes(stickyNotes.filter(note => note.id !== id && note._id !== id));
+    try {
+      await axios.delete(`${API}/quick-tasks/${id}`);
+    } catch (error) {
+      toast.error("Failed to delete quick task");
+      fetchQuickTasks();
+    }
   };
 
-  const clearCompletedNotes = () => {
-    setStickyNotes(stickyNotes.filter(note => !note.completed));
-    toast.success("Completed tasks cleared!");
+  const clearCompletedNotes = async () => {
+    const completedList = stickyNotes.filter(note => note.is_checked || note.completed);
+    setStickyNotes(stickyNotes.filter(note => !note.is_checked && !note.completed));
+    try {
+      await Promise.all(completedList.map(note => axios.delete(`${API}/quick-tasks/${note.id || note._id}`)));
+      toast.success("Completed tasks cleared!");
+    } catch (error) {
+      toast.error("Failed to clear completed tasks");
+      fetchQuickTasks();
+    }
   };
 
   useEffect(() => {
     fetchDashboardData();
     fetchTaskGroups();
+    fetchQuickTasks();
   }, []);
 
   const fetchTaskGroups = async () => {
@@ -919,39 +976,43 @@ const Dashboard = ({ user, setUser }) => {
                         No quick tasks yet!
                       </p>
                     ) : (
-                      stickyNotes.map((note) => (
-                        <div
-                          key={note.id}
-                          className={`flex items-center gap-2 p-1.5 rounded-sm transition-all ${
-                            note.completed ? "bg-yellow-200/50 opacity-60" : "bg-yellow-50 hover:bg-yellow-200/70"
-                          }`}
-                          data-testid={`sticky-note-${note.id}`}
-                        >
-                          <Checkbox
-                            checked={note.completed}
-                            onCheckedChange={() => toggleStickyNote(note.id)}
-                            className="border-yellow-600 data-[state=checked]:bg-yellow-600 data-[state=checked]:border-yellow-600 h-4 w-4"
-                            data-testid={`sticky-checkbox-${note.id}`}
-                          />
-                          <span 
-                            className={`flex-1 text-xs text-yellow-900 ${note.completed ? "line-through" : ""}`}
+                      stickyNotes.map((note) => {
+                        const noteId = note.id || note._id;
+                        const isDone = Boolean(note.is_checked || note.completed);
+                        return (
+                          <div
+                            key={noteId}
+                            className={`flex items-center gap-2 p-1.5 rounded-sm transition-all ${
+                              isDone ? "bg-yellow-200/50 opacity-60" : "bg-yellow-50 hover:bg-yellow-200/70"
+                            }`}
+                            data-testid={`sticky-note-${noteId}`}
                           >
-                            {note.text}
-                          </span>
-                          <button
-                            onClick={() => deleteStickyNote(note.id)}
-                            className="text-yellow-600 hover:text-red-600 transition-colors"
-                            data-testid={`delete-sticky-${note.id}`}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))
+                            <Checkbox
+                              checked={isDone}
+                              onCheckedChange={() => toggleStickyNote(noteId)}
+                              className="border-yellow-600 data-[state=checked]:bg-yellow-600 data-[state=checked]:border-yellow-600 h-4 w-4"
+                              data-testid={`sticky-checkbox-${noteId}`}
+                            />
+                            <span 
+                              className={`flex-1 text-xs text-yellow-900 ${isDone ? "line-through" : ""}`}
+                            >
+                              {note.text}
+                            </span>
+                            <button
+                              onClick={() => deleteStickyNote(noteId)}
+                              className="text-yellow-600 hover:text-red-600 transition-colors"
+                              data-testid={`delete-sticky-${noteId}`}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        );
+                      })
                     )}
                   </div>
 
                   {/* Clear completed button */}
-                  {stickyNotes.some(n => n.completed) && (
+                  {stickyNotes.some(n => n.is_checked || n.completed) && (
                     <Button
                       variant="ghost"
                       size="sm"

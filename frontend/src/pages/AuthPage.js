@@ -349,7 +349,17 @@ const AuthPage = ({ setUser }) => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="password">PASSWORD</Label>
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="password">PASSWORD</Label>
+                    <button
+                      type="button"
+                      onClick={() => navigate("/forgot-password")}
+                      className="text-xs text-primary hover:underline"
+                      data-testid="forgot-password-link"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
                   <Input
                     id="password"
                     type="password"

@@ -13,6 +13,8 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 import razorpay
 import bcrypt
+import random
+import resend
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -97,6 +99,45 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     user: UserResponse
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class VerifyOTPRequest(BaseModel):
+    email: EmailStr
+    otp_code: str
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    otp_code: str
+    new_password: str
+
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '')
+
+def send_email(to_email: str, subject: str, html_body: str) -> bool:
+    """Generic helper function to send emails via Resend with console fallback."""
+    api_key = os.environ.get('RESEND_API_KEY', '')
+    if not api_key:
+        logging.warning(f"[EMAIL FALLBACK] To: {to_email} | Subject: {subject} | Body preview: {html_body[:100]}...")
+        print(f"\n[EMAIL SENT TO {to_email}]\nSubject: {subject}\nBody: {html_body}\n")
+        return True
+    
+    try:
+        resend.api_key = api_key
+        params = {
+            "from": "TaskPlay <noreply@taskplay.in>",
+            "to": [to_email],
+            "subject": subject,
+            "html": html_body,
+        }
+        response = resend.Emails.send(params)
+        logging.info(f"Email sent via Resend to {to_email}: {response}")
+        print(f"\n[RESEND EMAIL SENT] To: {to_email} | Response: {response}")
+        return True
+    except Exception as e:
+        logging.error(f"Failed to send email via Resend to {to_email}: {e}")
+        print(f"\n[RESEND EMAIL FAILED] To: {to_email} | Error: {e}")
+        return False
 
 # Membership pricing configuration
 MEMBERSHIP_PLANS = {
@@ -792,6 +833,129 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         is_admin=current_user.get("is_admin", False),
         last_login=current_user.get("last_login")
     )
+
+# ==================== FORGOT / RESET PASSWORD ENDPOINTS ====================
+
+@api_router.post("/auth/forgot-password")
+async def forgot_password(req: ForgotPasswordRequest):
+    """Generate and send a 6-digit OTP code to user's email for password reset."""
+    user = await db.users.find_one({"email": req.email})
+    
+    # Always return generic success message to prevent user enumeration
+    if user:
+        otp_code = f"{random.randint(100000, 999999)}"
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+        
+        # Invalidate previous unused OTPs for this email
+        await db.password_reset_otps.update_many(
+            {"email": req.email, "used": False},
+            {"$set": {"used": True}}
+        )
+        
+        # Save new OTP document
+        otp_doc = {
+            "email": req.email,
+            "otp_code": otp_code,
+            "expires_at": expires_at.isoformat(),
+            "used": False,
+            "verified": False,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.password_reset_otps.insert_one(otp_doc)
+        
+        # Branded HTML email body
+        html_content = f"""
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+          <div style="text-align: center; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
+            <h1 style="color: #2563eb; margin: 0; font-size: 24px; font-weight: 800;">TASKPLAY</h1>
+          </div>
+          <div style="padding: 24px 0;">
+            <h2 style="color: #0f172a; margin-top: 0; font-size: 20px; font-weight: 700;">Reset Your Password</h2>
+            <p style="color: #475569; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
+              We received a request to reset your password. Use the 6-digit verification code below to proceed with resetting your TaskPlay account password:
+            </p>
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; text-align: center; margin: 24px 0;">
+              <span style="font-family: monospace, Courier; font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #2563eb;">{otp_code}</span>
+              <p style="color: #64748b; font-size: 13px; margin-top: 8px; margin-bottom: 0;">This code is valid for <strong>10 minutes</strong>.</p>
+            </div>
+            <p style="color: #64748b; font-size: 14px; line-height: 1.5;">
+              If you did not request a password reset, you can safely ignore this email and your password will remain unchanged.
+            </p>
+          </div>
+          <div style="border-top: 1px solid #f1f5f9; padding-top: 16px; text-align: center;">
+            <p style="color: #94a3b8; font-size: 12px; margin: 0;">© 2026 TaskPlay. Professional task management for modern teams.</p>
+          </div>
+        </div>
+        """
+        
+        send_email(req.email, "TaskPlay - Password Reset OTP", html_content)
+        
+    return {"message": "If an account exists with this email address, a password reset OTP has been sent."}
+
+
+@api_router.post("/auth/verify-otp")
+async def verify_otp(req: VerifyOTPRequest):
+    """Verify an OTP code without marking it as used yet."""
+    otp_doc = await db.password_reset_otps.find_one({
+        "email": req.email,
+        "otp_code": req.otp_code.strip(),
+        "used": False
+    })
+    
+    if not otp_doc:
+        raise HTTPException(status_code=400, detail="Invalid OTP code. Please check and try again.")
+        
+    expires_at = datetime.fromisoformat(otp_doc["expires_at"])
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+        
+    if datetime.now(timezone.utc) > expires_at:
+        raise HTTPException(status_code=400, detail="OTP code has expired. Please request a new one.")
+        
+    await db.password_reset_otps.update_one(
+        {"_id": otp_doc["_id"]},
+        {"$set": {"verified": True}}
+    )
+    
+    return {"message": "OTP verified successfully."}
+
+
+@api_router.post("/auth/reset-password")
+async def reset_password(req: ResetPasswordRequest):
+    """Reset user password after valid OTP verification."""
+    otp_doc = await db.password_reset_otps.find_one({
+        "email": req.email,
+        "otp_code": req.otp_code.strip(),
+        "used": False,
+        "verified": True
+    })
+    
+    if not otp_doc:
+        raise HTTPException(status_code=400, detail="Invalid or unverified OTP. Please verify your OTP code first.")
+        
+    expires_at = datetime.fromisoformat(otp_doc["expires_at"])
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+        
+    if datetime.now(timezone.utc) > expires_at:
+        raise HTTPException(status_code=400, detail="OTP session has expired. Please request a new OTP.")
+        
+    user = await db.users.find_one({"email": req.email})
+    if not user:
+        raise HTTPException(status_code=404, detail="User account not found.")
+        
+    hashed_password = pwd_context.hash(req.new_password)
+    await db.users.update_one(
+        {"_id": user["_id"]},
+        {"$set": {"password": hashed_password}}
+    )
+    
+    await db.password_reset_otps.update_one(
+        {"_id": otp_doc["_id"]},
+        {"$set": {"used": True}}
+    )
+    
+    return {"message": "Password has been reset successfully. You can now login with your new password."}
 
 # ==================== CHECKLIST ENDPOINTS ====================
 

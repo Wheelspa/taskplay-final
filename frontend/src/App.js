@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import axios from "axios";
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import Dashboard from "./pages/Dashboard";
 import CalendarView from "./pages/CalendarView";
 import TeamsPage from "./pages/TeamsPage";
@@ -98,6 +99,7 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/auth" element={<AuthPage setUser={setUser} />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route
             path="/dashboard"

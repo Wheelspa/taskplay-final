@@ -21,6 +21,7 @@ import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import AdminUserDetailPage from "./pages/AdminUserDetailPage";
 import AdminPaymentsPage from "./pages/AdminPaymentsPage";
+import AdminCouponsPage from "./pages/AdminCouponsPage";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -219,6 +220,14 @@ function App() {
             element={
               <AdminProtectedRoute user={user}>
                 <AdminPaymentsPage user={user} setUser={setUser} />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/coupons"
+            element={
+              <AdminProtectedRoute user={user}>
+                <AdminCouponsPage user={user} setUser={setUser} />
               </AdminProtectedRoute>
             }
           />

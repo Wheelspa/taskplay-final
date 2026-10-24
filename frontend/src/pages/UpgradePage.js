@@ -16,6 +16,7 @@ const UpgradePage = ({ user, setUser }) => {
   const [billingCycle, setBillingCycle] = useState("yearly");
   const [discountCode, setDiscountCode] = useState("");
   const [discountApplied, setDiscountApplied] = useState(false);
+  const [discountInfo, setDiscountInfo] = useState(null);
   const [discountError, setDiscountError] = useState("");
   const [validatingCode, setValidatingCode] = useState(false);
   
@@ -23,7 +24,8 @@ const UpgradePage = ({ user, setUser }) => {
   const featureRequested = searchParams.get("feature");
 
   const applyDiscountCode = async () => {
-    if (!discountCode.trim()) {
+    const code = discountCode.trim().toUpperCase();
+    if (!code) {
       setDiscountError("Please enter a discount code");
       return;
     }
@@ -32,18 +34,24 @@ const UpgradePage = ({ user, setUser }) => {
     setDiscountError("");
     
     try {
-      const response = await axios.post(`${API}/discount/validate?code=${encodeURIComponent(discountCode)}`);
+      const response = await axios.post(`${API}/discount/validate`, {
+        code: code,
+        email: user?.email
+      });
       if (response.data.valid) {
         setDiscountApplied(true);
+        setDiscountInfo(response.data);
         setDiscountError("");
-        toast.success(`${response.data.description} applied!`);
+        toast.success(`🎉 ${response.data.description || "Discount code applied!"}`);
       } else {
         setDiscountApplied(false);
+        setDiscountInfo(null);
         setDiscountError(response.data.error || "Invalid discount code");
       }
     } catch (error) {
       setDiscountApplied(false);
-      setDiscountError(error.response?.data?.detail || "Failed to validate discount code");
+      setDiscountInfo(null);
+      setDiscountError(error.response?.data?.detail || error.response?.data?.error || "Failed to validate discount code");
     } finally {
       setValidatingCode(false);
     }
@@ -101,8 +109,8 @@ const UpgradePage = ({ user, setUser }) => {
     let finalPrice = basePlan.price;
     let finalAmount = basePlan.amount;
     
-    if (discountApplied) {
-      const discountPercent = 50; // From EARLYBIRD
+    if (discountApplied && discountInfo) {
+      const discountPercent = discountInfo.discount_percent || 0;
       finalPrice = Math.round(basePlan.price * (1 - discountPercent / 100));
       finalAmount = Math.round(basePlan.amount * (1 - discountPercent / 100));
     }
@@ -120,6 +128,7 @@ const UpgradePage = ({ user, setUser }) => {
   const removeDiscount = () => {
     setDiscountCode("");
     setDiscountApplied(false);
+    setDiscountInfo(null);
     setDiscountError("");
   };
 
@@ -128,10 +137,31 @@ const UpgradePage = ({ user, setUser }) => {
     const planDetails = getSelectedPlanDetails();
     
     try {
-      // Create payment order
+      // Create payment order (pass plan + optional discount_code + email, calculated by server)
       const orderResponse = await axios.post(`${API}/payment/create-order`, {
-        amount: planDetails.amount
+        plan: selectedPlan,
+        discount_code: discountApplied ? discountCode.trim() : undefined,
+        email: user?.email
       });
+
+      // Free upgrade flow (100% discount: skip Razorpay completely)
+      if (orderResponse.data.free || orderResponse.data.amount === 0) {
+        try {
+          const upgradeResponse = await axios.post(`${API}/membership/upgrade`, {
+            membership_plan: selectedPlan,
+            discount_code: discountApplied ? discountCode.trim() : undefined
+          });
+
+          setUser(upgradeResponse.data.user);
+          toast.success(`🎉 ${upgradeResponse.data.message || "Upgraded successfully!"}`);
+          navigate("/dashboard");
+        } catch (error) {
+          toast.error(error.response?.data?.detail || "Upgrade failed");
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
 
       // Mock payment flow
       if (orderResponse.data.mock) {
@@ -144,7 +174,8 @@ const UpgradePage = ({ user, setUser }) => {
             membership_plan: selectedPlan,
             payment_order_id: orderResponse.data.order_id,
             payment_id: mockPaymentId,
-            payment_signature: mockSignature
+            payment_signature: mockSignature,
+            discount_code: discountApplied ? discountCode.trim() : undefined
           });
 
           // Update local user state
@@ -173,7 +204,8 @@ const UpgradePage = ({ user, setUser }) => {
               membership_plan: selectedPlan,
               payment_order_id: response.razorpay_order_id,
               payment_id: response.razorpay_payment_id,
-              payment_signature: response.razorpay_signature
+              payment_signature: response.razorpay_signature,
+              discount_code: discountApplied ? discountCode.trim() : undefined
             });
 
             setUser(upgradeResponse.data.user);
@@ -203,19 +235,29 @@ const UpgradePage = ({ user, setUser }) => {
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (error) {
-      toast.error("Failed to initiate payment");
+      toast.error(error.response?.data?.detail || "Failed to initiate payment");
       setLoading(false);
     }
   };
 
   const handlePlanSelect = (planType) => {
     setSelectedPlan(`${planType}_${billingCycle}`);
+    if (discountApplied) {
+      setDiscountApplied(false);
+      setDiscountInfo(null);
+      setDiscountError("Plan changed. Please re-apply your discount code.");
+    }
   };
 
   const handleBillingCycleChange = (cycle) => {
     setBillingCycle(cycle);
     const planType = selectedPlan.includes("basic") ? "basic" : "premium";
     setSelectedPlan(`${planType}_${cycle}`);
+    if (discountApplied) {
+      setDiscountApplied(false);
+      setDiscountInfo(null);
+      setDiscountError("Billing cycle changed. Please re-apply your discount code.");
+    }
   };
 
   // Check if user already has this plan
@@ -377,12 +419,15 @@ const UpgradePage = ({ user, setUser }) => {
             <div className="flex gap-2 mt-2">
               <Input
                 type="text"
-                placeholder="Enter code (e.g., EARLYBIRD)"
+                placeholder="Enter code"
                 value={discountCode}
                 onChange={(e) => {
                   setDiscountCode(e.target.value.toUpperCase());
                   setDiscountError("");
-                  if (discountApplied) setDiscountApplied(false);
+                  if (discountApplied) {
+                    setDiscountApplied(false);
+                    setDiscountInfo(null);
+                  }
                 }}
                 disabled={discountApplied}
                 className="flex-1"
@@ -410,14 +455,11 @@ const UpgradePage = ({ user, setUser }) => {
             {discountError && (
               <p className="text-red-500 text-xs mt-1">{discountError}</p>
             )}
-            {discountApplied && (
+            {discountApplied && discountInfo && (
               <p className="text-green-600 text-xs mt-1 font-medium">
-                ✓ 50% OFF - Early Bird Offer applied!
+                ✓ {discountInfo.description || `${discountInfo.discount_percent}% OFF applied!`}
               </p>
             )}
-            <p className="text-xs text-muted-foreground mt-2">
-              🎁 <strong>EARLYBIRD</strong> - 50% off! Expires Jun 30, 2026
-            </p>
           </div>
 
           {/* Payment Summary */}
@@ -428,7 +470,9 @@ const UpgradePage = ({ user, setUser }) => {
                   {selectedPlan.includes("basic") ? "Basic" : "Premium"} Plan - {billingCycle === "yearly" ? "Yearly" : "Monthly"}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  💡 Testing mode: Mock payment will be used (no real charges)
+                  {getSelectedPlanDetails().price === 0
+                    ? "✨ 100% Free - No payment required"
+                    : "🔒 Secure payment powered by Razorpay"}
                 </p>
               </div>
               <div className="text-right">
@@ -440,8 +484,8 @@ const UpgradePage = ({ user, setUser }) => {
                 <p className="text-2xl font-bold text-green-600">
                   ₹{getSelectedPlanDetails().price}
                 </p>
-                {discountApplied && (
-                  <p className="text-xs text-green-600 font-medium">50% OFF applied!</p>
+                {discountApplied && discountInfo && (
+                  <p className="text-xs text-green-600 font-medium">{discountInfo.discount_percent}% OFF applied!</p>
                 )}
               </div>
             </div>
@@ -453,7 +497,11 @@ const UpgradePage = ({ user, setUser }) => {
             disabled={loading || isCurrentPlan(selectedPlan.split("_")[0])}
             data-testid="upgrade-submit-btn"
           >
-            {loading ? "PROCESSING..." : `PAY ₹${getSelectedPlanDetails().price} & UPGRADE`}
+            {loading
+              ? "PROCESSING..."
+              : getSelectedPlanDetails().price === 0
+              ? "ACTIVATE FREE ACCESS"
+              : `PAY ₹${getSelectedPlanDetails().price} & UPGRADE`}
           </Button>
         </div>
       </div>

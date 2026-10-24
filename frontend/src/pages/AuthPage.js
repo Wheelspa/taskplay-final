@@ -31,29 +31,9 @@ const AuthPage = ({ setUser }) => {
 
   const [discountCode, setDiscountCode] = useState("");
   const [discountApplied, setDiscountApplied] = useState(false);
+  const [discountInfo, setDiscountInfo] = useState(null);
   const [discountError, setDiscountError] = useState("");
-
-  // Discount codes with expiration dates
-  const VALID_DISCOUNT_CODES = {
-    "EARLYBIRD": { 
-      discount: 50, 
-      label: "50% OFF - Early Bird Offer!",
-      expiresAt: new Date("2026-06-30T23:59:59"), // Valid until Jun 30, 2026
-      description: "Limited time offer - Expires Jun 30, 2026"
-    }
-  };
-
-  const isDiscountCodeValid = (code) => {
-    const discountInfo = VALID_DISCOUNT_CODES[code.toUpperCase()];
-    if (!discountInfo) return { valid: false, reason: "Invalid discount code" };
-    
-    const now = new Date();
-    if (discountInfo.expiresAt && now > discountInfo.expiresAt) {
-      return { valid: false, reason: "This discount code has expired" };
-    }
-    
-    return { valid: true, discountInfo };
-  };
+  const [validatingCode, setValidatingCode] = useState(false);
 
   const plans = {
     basic: {
@@ -123,8 +103,8 @@ const AuthPage = ({ setUser }) => {
     let finalPrice = basePlan.price;
     let finalAmount = basePlan.amount;
     
-    if (discountApplied && VALID_DISCOUNT_CODES[discountCode.toUpperCase()]) {
-      const discountPercent = VALID_DISCOUNT_CODES[discountCode.toUpperCase()].discount;
+    if (discountApplied && discountInfo) {
+      const discountPercent = discountInfo.discount_percent || 0;
       finalPrice = Math.round(basePlan.price * (1 - discountPercent / 100));
       finalAmount = Math.round(basePlan.amount * (1 - discountPercent / 100));
     }
@@ -139,23 +119,51 @@ const AuthPage = ({ setUser }) => {
     };
   };
 
-  const applyDiscountCode = () => {
-    const code = discountCode.toUpperCase().trim();
-    const validation = isDiscountCodeValid(code);
-    
-    if (validation.valid) {
-      setDiscountApplied(true);
-      setDiscountError("");
-      toast.success(`🎉 ${validation.discountInfo.label} applied!`);
-    } else {
+  const applyDiscountCode = async () => {
+    const code = discountCode.trim().toUpperCase();
+    if (!code) {
+      setDiscountError("Please enter a discount code");
+      return;
+    }
+
+    if (!registerData.email || !registerData.email.trim()) {
+      setDiscountError("Please enter your email address first before applying a discount code");
+      toast.error("Please enter your email address first");
+      return;
+    }
+
+    setValidatingCode(true);
+    setDiscountError("");
+
+    try {
+      const response = await axios.post(`${API}/discount/validate`, {
+        code: code,
+        email: registerData.email.trim()
+      });
+
+      if (response.data.valid) {
+        setDiscountApplied(true);
+        setDiscountInfo(response.data);
+        setDiscountError("");
+        toast.success(`🎉 ${response.data.description || "Discount code applied!"}`);
+      } else {
+        setDiscountApplied(false);
+        setDiscountInfo(null);
+        setDiscountError(response.data.error || "Invalid discount code");
+      }
+    } catch (error) {
       setDiscountApplied(false);
-      setDiscountError(validation.reason);
+      setDiscountInfo(null);
+      setDiscountError(error.response?.data?.detail || error.response?.data?.error || "Failed to validate discount code");
+    } finally {
+      setValidatingCode(false);
     }
   };
 
   const removeDiscount = () => {
     setDiscountCode("");
     setDiscountApplied(false);
+    setDiscountInfo(null);
     setDiscountError("");
   };
 
@@ -165,8 +173,31 @@ const AuthPage = ({ setUser }) => {
     
     try {
       const orderResponse = await axios.post(`${API}/payment/create-order`, {
-        amount: planDetails.amount
+        plan: selectedPlan,
+        discount_code: discountApplied ? discountCode.trim() : undefined,
+        email: registerData.email.trim()
       });
+
+      // Free access flow (100% discount: skip Razorpay completely)
+      if (orderResponse.data.free || orderResponse.data.amount === 0) {
+        try {
+          const registerResponse = await axios.post(`${API}/auth/register`, {
+            ...registerData,
+            membership_plan: selectedPlan,
+            discount_code: discountApplied ? discountCode.trim() : undefined
+          });
+
+          setAuthToken(registerResponse.data.access_token);
+          setUser(registerResponse.data.user);
+          toast.success("Welcome! Your free membership access is now active!");
+          navigate("/dashboard");
+        } catch (error) {
+          toast.error(error.response?.data?.detail || "Registration failed");
+        } finally {
+          setPaymentProcessing(false);
+        }
+        return;
+      }
 
       // Check if it's mock payment
       if (orderResponse.data.mock) {
@@ -185,7 +216,8 @@ const AuthPage = ({ setUser }) => {
             membership_plan: selectedPlan,
             payment_order_id: orderResponse.data.order_id,
             payment_id: mockPaymentId,
-            payment_signature: mockSignature
+            payment_signature: mockSignature,
+            discount_code: discountApplied ? discountCode.trim() : undefined
           });
 
           setAuthToken(registerResponse.data.access_token);
@@ -221,7 +253,8 @@ const AuthPage = ({ setUser }) => {
               membership_plan: selectedPlan,
               payment_order_id: response.razorpay_order_id,
               payment_id: response.razorpay_payment_id,
-              payment_signature: response.razorpay_signature
+              payment_signature: response.razorpay_signature,
+              discount_code: discountApplied ? discountCode.trim() : undefined
             });
 
             setAuthToken(registerResponse.data.access_token);
@@ -252,7 +285,7 @@ const AuthPage = ({ setUser }) => {
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (error) {
-      toast.error("Failed to initiate payment");
+      toast.error(error.response?.data?.detail || "Failed to initiate payment");
       setPaymentProcessing(false);
     }
   };
@@ -270,12 +303,22 @@ const AuthPage = ({ setUser }) => {
 
   const handlePlanSelect = (planType) => {
     setSelectedPlan(`${planType}_${billingCycle}`);
+    if (discountApplied) {
+      setDiscountApplied(false);
+      setDiscountInfo(null);
+      setDiscountError("Plan changed. Please re-apply your discount code.");
+    }
   };
 
   const handleBillingCycleChange = (cycle) => {
     setBillingCycle(cycle);
     const planType = selectedPlan.includes("basic") ? "basic" : "premium";
     setSelectedPlan(`${planType}_${cycle}`);
+    if (discountApplied) {
+      setDiscountApplied(false);
+      setDiscountInfo(null);
+      setDiscountError("Billing cycle changed. Please re-apply your discount code.");
+    }
   };
 
   return (
@@ -502,7 +545,14 @@ const AuthPage = ({ setUser }) => {
                       id="reg-email"
                       type="email"
                       value={registerData.email}
-                      onChange={(e) => setRegisterData({ ...registerData, email: e.target.value })}
+                      onChange={(e) => {
+                        setRegisterData({ ...registerData, email: e.target.value });
+                        if (discountApplied) {
+                          setDiscountApplied(false);
+                          setDiscountInfo(null);
+                          setDiscountError("Email changed. Please re-apply your discount code.");
+                        }
+                      }}
                       required
                       data-testid="register-email-input"
                       className="mt-2"
@@ -540,12 +590,15 @@ const AuthPage = ({ setUser }) => {
                   <div className="flex gap-2 mt-2">
                     <Input
                       type="text"
-                      placeholder="Enter code (e.g., EARLYBIRD)"
+                      placeholder="Enter code"
                       value={discountCode}
                       onChange={(e) => {
                         setDiscountCode(e.target.value.toUpperCase());
                         setDiscountError("");
-                        if (discountApplied) setDiscountApplied(false);
+                        if (discountApplied) {
+                          setDiscountApplied(false);
+                          setDiscountInfo(null);
+                        }
                       }}
                       disabled={discountApplied}
                       data-testid="discount-code-input"
@@ -566,24 +619,21 @@ const AuthPage = ({ setUser }) => {
                         type="button"
                         variant="outline"
                         onClick={applyDiscountCode}
-                        disabled={!discountCode.trim()}
+                        disabled={!discountCode.trim() || validatingCode}
                         data-testid="apply-discount-btn"
                       >
-                        Apply
+                        {validatingCode ? "Validating..." : "Apply"}
                       </Button>
                     )}
                   </div>
                   {discountError && (
                     <p className="text-red-500 text-xs mt-1">{discountError}</p>
                   )}
-                  {discountApplied && VALID_DISCOUNT_CODES[discountCode.toUpperCase()] && (
+                  {discountApplied && discountInfo && (
                     <p className="text-green-600 text-xs mt-1 font-medium">
-                      ✓ {VALID_DISCOUNT_CODES[discountCode.toUpperCase()].label}
+                      ✓ {discountInfo.description || `${discountInfo.discount_percent}% OFF applied!`}
                     </p>
                   )}
-                  <p className="text-xs text-muted-foreground mt-2">
-                    🎁 <strong>EARLYBIRD</strong> - 50% off! Expires Feb 28, 2025
-                  </p>
                 </div>
 
                 <div className="bg-accent/10 border border-accent p-4 rounded-sm">
@@ -593,7 +643,9 @@ const AuthPage = ({ setUser }) => {
                         {selectedPlan.includes("basic") ? "Basic" : "Premium"} Plan - {billingCycle === "yearly" ? "Yearly" : "Monthly"}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        🔒 Secure payment powered by Razorpay
+                        {getSelectedPlanDetails().price === 0
+                          ? "✨ 100% Free - No payment required"
+                          : "🔒 Secure payment powered by Razorpay"}
                       </p>
                     </div>
                     <div className="text-right">
@@ -605,8 +657,10 @@ const AuthPage = ({ setUser }) => {
                       <p className="text-2xl font-bold text-green-600">
                         ₹{getSelectedPlanDetails().price}
                       </p>
-                      {discountApplied && (
-                        <p className="text-xs text-green-600 font-medium">50% OFF applied!</p>
+                      {discountApplied && discountInfo && (
+                        <p className="text-xs text-green-600 font-medium">
+                          {discountInfo.discount_percent}% OFF applied!
+                        </p>
                       )}
                     </div>
                   </div>
@@ -618,7 +672,11 @@ const AuthPage = ({ setUser }) => {
                   disabled={paymentProcessing}
                   data-testid="register-submit-btn"
                 >
-                  {paymentProcessing ? "PROCESSING..." : `PAY ₹${getSelectedPlanDetails().price} & REGISTER`}
+                  {paymentProcessing
+                    ? "PROCESSING..."
+                    : getSelectedPlanDetails().price === 0
+                    ? "ACTIVATE FREE ACCESS"
+                    : `PAY ₹${getSelectedPlanDetails().price} & REGISTER`}
                 </Button>
                 
                 <p className="text-xs text-muted-foreground text-center mt-4">

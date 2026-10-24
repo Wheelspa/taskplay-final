@@ -7,6 +7,7 @@ import {
   ShieldCheck,
   Users,
   CreditCard,
+  Tag,
   LayoutDashboard,
   LogOut,
   ArrowLeft,
@@ -139,6 +140,13 @@ const AdminUserDetailPage = ({ user, setUser }) => {
                 >
                   <CreditCard className="w-4 h-4" />
                   <span>Payments</span>
+                </Link>
+                <Link
+                  to="/admin/coupons"
+                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 flex items-center space-x-1"
+                >
+                  <Tag className="w-4 h-4" />
+                  <span>Coupons</span>
                 </Link>
               </nav>
             </div>

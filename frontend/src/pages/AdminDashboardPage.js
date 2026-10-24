@@ -4,7 +4,7 @@ import axios from "axios";
 import { API, removeAuthToken } from "../App";
 import { Button } from "@/components/ui/button";
 import { 
-  Users, IndianRupee, CheckSquare, Zap, Crown, CreditCard, UserX, LogOut, 
+  Users, IndianRupee, CheckSquare, Zap, Crown, CreditCard, Tag, UserX, LogOut, 
   ShieldCheck, LayoutDashboard, Calendar, MapPin, Phone, Trash2, Edit, 
   UserCheck
 } from "lucide-react";
@@ -141,6 +141,13 @@ const AdminDashboardPage = ({ user, setUser }) => {
                 >
                   <CreditCard className="w-4 h-4" />
                   <span>Payments</span>
+                </Link>
+                <Link
+                  to="/admin/coupons"
+                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 flex items-center space-x-1"
+                >
+                  <Tag className="w-4 h-4" />
+                  <span>Coupons</span>
                 </Link>
               </nav>
             </div>

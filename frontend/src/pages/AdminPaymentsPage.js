@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { API, removeAuthToken } from "../App";
 import { Button } from "@/components/ui/button";
-import { Users, CreditCard, LogOut, ShieldCheck, LayoutDashboard, IndianRupee } from "lucide-react";
+import { Users, CreditCard, Tag, LogOut, ShieldCheck, LayoutDashboard, IndianRupee } from "lucide-react";
 import { toast } from "sonner";
 
 const AdminPaymentsPage = ({ user, setUser }) => {
@@ -80,6 +80,13 @@ const AdminPaymentsPage = ({ user, setUser }) => {
                 >
                   <CreditCard className="w-4 h-4" />
                   <span>Payments</span>
+                </Link>
+                <Link
+                  to="/admin/coupons"
+                  className="px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 flex items-center space-x-1"
+                >
+                  <Tag className="w-4 h-4" />
+                  <span>Coupons</span>
                 </Link>
               </nav>
             </div>

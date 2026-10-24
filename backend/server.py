@@ -47,36 +47,103 @@ class UserRegister(BaseModel):
     payment_signature: Optional[str] = None
     discount_code: Optional[str] = None
 
-# Discount code configuration
-DISCOUNT_CODES = {
-    "EARLYBIRD": {
-        "discount_percent": 50,
-        "expires_at": datetime(2026, 6, 30, 23, 59, 59, tzinfo=timezone.utc),
-        "description": "50% off Early Bird discount"
-    }
-}
+# Coupon Models
+class CouponCreate(BaseModel):
+    code: str
+    discount_percent: int = Field(..., ge=1, le=100)
+    allowed_email: Optional[str] = None
+    max_uses: Optional[int] = Field(None, ge=1)
+    expires_at: Optional[str] = None
+    is_active: bool = True
 
-def validate_discount_code(code: str) -> dict:
-    """Validate a discount code and return discount info if valid"""
-    if not code:
-        return None
+class CouponUpdate(BaseModel):
+    discount_percent: Optional[int] = Field(None, ge=1, le=100)
+    allowed_email: Optional[str] = None
+    max_uses: Optional[int] = Field(None, ge=1)
+    expires_at: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class CouponResponse(BaseModel):
+    id: str
+    code: str
+    discount_percent: int
+    allowed_email: Optional[str] = None
+    max_uses: Optional[int] = None
+    used_count: int = 0
+    used_by: List[str] = []
+    expires_at: Optional[str] = None
+    is_active: bool = True
+    created_at: str
+
+class DiscountValidatePayload(BaseModel):
+    code: Optional[str] = None
+    email: Optional[str] = None
+
+async def validate_coupon(code: str, email: Optional[str] = None) -> dict:
+    """Validate a coupon code against db.coupons and return discount info if valid"""
+    if not code or not code.strip():
+        return {"valid": False, "error": "No coupon code provided"}
     
-    code_upper = code.upper().strip()
-    if code_upper not in DISCOUNT_CODES:
+    code_upper = code.strip().upper()
+    email_lower = email.strip().lower() if email and email.strip() else None
+
+    coupon = await db.coupons.find_one({"code": code_upper})
+    if not coupon:
         return {"valid": False, "error": "Invalid discount code"}
     
-    code_info = DISCOUNT_CODES[code_upper]
-    now = datetime.now(timezone.utc)
+    if not coupon.get("is_active", True):
+        return {"valid": False, "error": f"Coupon code '{code_upper}' is inactive"}
     
-    if now > code_info["expires_at"]:
-        return {"valid": False, "error": f"Discount code '{code_upper}' has expired"}
+    # Check expiration date
+    expires_at_str = coupon.get("expires_at")
+    if expires_at_str:
+        try:
+            expiry_dt = datetime.fromisoformat(expires_at_str.replace("Z", "+00:00"))
+            if expiry_dt.tzinfo is None:
+                expiry_dt = expiry_dt.replace(tzinfo=timezone.utc)
+            now = datetime.now(timezone.utc)
+            if now > expiry_dt:
+                return {"valid": False, "error": f"Coupon code '{code_upper}' has expired"}
+        except Exception:
+            pass
+
+    # Check allowed_email restriction
+    allowed_email = coupon.get("allowed_email")
+    if allowed_email and allowed_email.strip():
+        allowed_email_clean = allowed_email.strip().lower()
+        if not email_lower:
+            return {
+                "valid": False,
+                "error": "This coupon code is reserved for a specific email address. Please enter your email address first."
+            }
+        if email_lower != allowed_email_clean:
+            return {
+                "valid": False,
+                "error": f"Coupon code '{code_upper}' is only valid for {allowed_email_clean}"
+            }
+
+    # Check max uses
+    max_uses = coupon.get("max_uses")
+    used_count = coupon.get("used_count", 0)
+    if max_uses is not None and used_count >= max_uses:
+        return {"valid": False, "error": f"Coupon code '{code_upper}' has reached its maximum usage limit"}
     
+    # Check if already used by this email
+    if email_lower and email_lower in coupon.get("used_by", []):
+        return {"valid": False, "error": f"Coupon code '{code_upper}' has already been redeemed for {email_lower}"}
+
+    discount_percent = coupon.get("discount_percent", 0)
     return {
         "valid": True,
         "code": code_upper,
-        "discount_percent": code_info["discount_percent"],
-        "description": code_info["description"]
+        "discount_percent": discount_percent,
+        "is_free": discount_percent == 100,
+        "description": f"{discount_percent}% off discount" if discount_percent < 100 else "100% Free Access",
+        "coupon_id": coupon["_id"]
     }
+
+async def validate_discount_code(code: str, email: Optional[str] = None) -> dict:
+    return await validate_coupon(code, email)
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -146,6 +213,78 @@ MEMBERSHIP_PLANS = {
     "premium_monthly": {"type": "premium", "plan": "monthly", "amount": 18000, "display": "₹180/month"},
     "premium_yearly": {"type": "premium", "plan": "yearly", "amount": 99900, "display": "₹999/year"}
 }
+
+async def calculate_plan_price(plan_key: str, discount_code: Optional[str] = None, email: Optional[str] = None) -> tuple[int, Optional[dict]]:
+    """
+    Calculate final amount in paise on the server.
+    Validates coupon with email if provided.
+    Returns (final_amount, coupon_info).
+    """
+    if not plan_key or plan_key not in MEMBERSHIP_PLANS:
+        raise HTTPException(status_code=400, detail="Invalid membership plan")
+    
+    base_amount = MEMBERSHIP_PLANS[plan_key]["amount"]
+    coupon_info = None
+
+    if discount_code and discount_code.strip():
+        valid_res = await validate_coupon(discount_code, email)
+        if not valid_res.get("valid"):
+            raise HTTPException(status_code=400, detail=valid_res.get("error", "Invalid discount code"))
+        coupon_info = valid_res
+        discount_percent = valid_res.get("discount_percent", 0)
+        final_amount = round(base_amount * (1 - discount_percent / 100))
+    else:
+        final_amount = base_amount
+    
+    return final_amount, coupon_info
+
+async def consume_coupon(coupon_code: str, email: str) -> bool:
+    """
+    Atomically increment used_count and append email to used_by.
+    Ensures max_uses limit is respected and prevents duplicate usage by same email.
+    Returns True if successfully consumed, False otherwise.
+    """
+    if not coupon_code or not email:
+        return False
+    
+    code_upper = coupon_code.strip().upper()
+    email_lower = email.strip().lower()
+
+    condition = {
+        "code": code_upper,
+        "is_active": True,
+        "$or": [
+            {"max_uses": None},
+            {"$expr": {"$lt": ["$used_count", "$max_uses"]}}
+        ],
+        "used_by": {"$ne": email_lower}
+    }
+    update = {
+        "$inc": {"used_count": 1},
+        "$push": {"used_by": email_lower}
+    }
+
+    result = await db.coupons.update_one(condition, update)
+    return result.modified_count > 0
+
+async def release_coupon(coupon_code: str, email: str):
+    """
+    Rollback coupon consumption if user registration or upgrade fails.
+    """
+    if not coupon_code or not email:
+        return
+    code_upper = coupon_code.strip().upper()
+    email_lower = email.strip().lower()
+    try:
+        await db.coupons.update_one(
+            {"code": code_upper},
+            {
+                "$inc": {"used_count": -1},
+                "$pull": {"used_by": email_lower}
+            }
+        )
+    except Exception as e:
+        logger.error(f"Failed to release coupon {code_upper} for {email_lower}: {e}")
 
 # Task Group Models
 class TaskGroupCreate(BaseModel):
@@ -262,7 +401,11 @@ class CommentResponse(BaseModel):
     created_at: str
 
 class PaymentOrderCreate(BaseModel):
-    amount: int
+    amount: Optional[int] = None
+    plan: Optional[str] = None
+    membership_plan: Optional[str] = None
+    discount_code: Optional[str] = None
+    email: Optional[str] = None
 
 class PaymentVerify(BaseModel):
     order_id: str
@@ -543,29 +686,178 @@ async def get_admin_payments(admin: dict = Depends(get_current_admin)):
         })
     return records
 
+# ==================== ADMIN COUPON ENDPOINTS ====================
+
+@api_router.get("/admin/coupons", response_model=List[CouponResponse])
+async def get_admin_coupons(admin: dict = Depends(get_current_admin)):
+    """List all coupons for admin"""
+    coupons = await db.coupons.find({}).sort("created_at", -1).to_list(1000)
+    return [
+        CouponResponse(
+            id=c["_id"],
+            code=c["code"],
+            discount_percent=c["discount_percent"],
+            allowed_email=c.get("allowed_email"),
+            max_uses=c.get("max_uses"),
+            used_count=c.get("used_count", 0),
+            used_by=c.get("used_by", []),
+            expires_at=c.get("expires_at"),
+            is_active=c.get("is_active", True),
+            created_at=c.get("created_at", "")
+        )
+        for c in coupons
+    ]
+
+@api_router.post("/admin/coupons", response_model=CouponResponse)
+async def create_admin_coupon(coupon_in: CouponCreate, admin: dict = Depends(get_current_admin)):
+    """Create a new coupon (admin only)"""
+    code_clean = coupon_in.code.strip().upper()
+    if not code_clean:
+        raise HTTPException(status_code=400, detail="Coupon code cannot be empty")
+    
+    allowed_email_clean = coupon_in.allowed_email.strip().lower() if coupon_in.allowed_email and coupon_in.allowed_email.strip() else None
+
+    # Enforce: A 100% coupon must have allowed_email OR max_uses, else reject creation
+    if coupon_in.discount_percent == 100:
+        if not (allowed_email_clean or (coupon_in.max_uses and coupon_in.max_uses > 0)):
+            raise HTTPException(
+                status_code=400,
+                detail="A 100% discount coupon must specify either an allowed email or a maximum usage limit."
+            )
+    
+    existing = await db.coupons.find_one({"code": code_clean})
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Coupon with code '{code_clean}' already exists")
+    
+    coupon_id = f"cpn_{datetime.now(timezone.utc).timestamp()}"
+    now_iso = datetime.now(timezone.utc).isoformat()
+    
+    doc = {
+        "_id": coupon_id,
+        "code": code_clean,
+        "discount_percent": coupon_in.discount_percent,
+        "allowed_email": allowed_email_clean,
+        "max_uses": coupon_in.max_uses,
+        "used_count": 0,
+        "used_by": [],
+        "expires_at": coupon_in.expires_at,
+        "is_active": coupon_in.is_active,
+        "created_at": now_iso,
+        "created_by": admin.get("_id") or admin.get("id")
+    }
+    await db.coupons.insert_one(doc)
+    
+    return CouponResponse(
+        id=coupon_id,
+        code=code_clean,
+        discount_percent=coupon_in.discount_percent,
+        allowed_email=allowed_email_clean,
+        max_uses=coupon_in.max_uses,
+        used_count=0,
+        used_by=[],
+        expires_at=coupon_in.expires_at,
+        is_active=coupon_in.is_active,
+        created_at=now_iso
+    )
+
+@api_router.put("/admin/coupons/{coupon_id}", response_model=CouponResponse)
+async def update_admin_coupon(coupon_id: str, coupon_update: CouponUpdate, admin: dict = Depends(get_current_admin)):
+    """Update a coupon (toggle active, update limits/expiry)"""
+    existing = await db.coupons.find_one({"_id": coupon_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Coupon not found")
+    
+    update_data = {}
+    if coupon_update.discount_percent is not None:
+        update_data["discount_percent"] = coupon_update.discount_percent
+    if coupon_update.allowed_email is not None:
+        update_data["allowed_email"] = coupon_update.allowed_email.strip().lower() if coupon_update.allowed_email.strip() else None
+    if coupon_update.max_uses is not None:
+        update_data["max_uses"] = coupon_update.max_uses
+    if coupon_update.expires_at is not None:
+        update_data["expires_at"] = coupon_update.expires_at
+    if coupon_update.is_active is not None:
+        update_data["is_active"] = coupon_update.is_active
+
+    # Check 100% rule if discount_percent is/becomes 100
+    target_discount = update_data.get("discount_percent", existing.get("discount_percent"))
+    target_email = update_data.get("allowed_email", existing.get("allowed_email"))
+    target_max_uses = update_data.get("max_uses", existing.get("max_uses"))
+    
+    if target_discount == 100 and not (target_email or (target_max_uses and target_max_uses > 0)):
+        raise HTTPException(
+            status_code=400,
+            detail="A 100% discount coupon must specify either an allowed email or a maximum usage limit."
+        )
+
+    if update_data:
+        await db.coupons.update_one({"_id": coupon_id}, {"$set": update_data})
+    
+    updated = await db.coupons.find_one({"_id": coupon_id})
+    return CouponResponse(
+        id=updated["_id"],
+        code=updated["code"],
+        discount_percent=updated["discount_percent"],
+        allowed_email=updated.get("allowed_email"),
+        max_uses=updated.get("max_uses"),
+        used_count=updated.get("used_count", 0),
+        used_by=updated.get("used_by", []),
+        expires_at=updated.get("expires_at"),
+        is_active=updated.get("is_active", True),
+        created_at=updated.get("created_at", "")
+    )
+
+@api_router.delete("/admin/coupons/{coupon_id}")
+async def delete_admin_coupon(coupon_id: str, admin: dict = Depends(get_current_admin)):
+    """Delete a coupon (admin only)"""
+    result = await db.coupons.delete_one({"_id": coupon_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Coupon not found")
+    return {"status": "success", "message": "Coupon deleted successfully"}
+
 
 @api_router.post("/payment/create-order")
 async def create_payment_order(order: PaymentOrderCreate):
     try:
+        plan_key = order.plan or order.membership_plan
+        if plan_key:
+            final_amount, coupon_info = await calculate_plan_price(plan_key, order.discount_code, order.email)
+        elif order.amount is not None:
+            final_amount = order.amount
+        else:
+            raise HTTPException(status_code=400, detail="Either plan or amount is required")
+
+        if final_amount == 0:
+            return {
+                "free": True,
+                "order_id": "free_order",
+                "amount": 0,
+                "currency": "INR"
+            }
+
         if USE_MOCK_PAYMENT:
             mock_order_id = f"mock_order_{datetime.now(timezone.utc).timestamp()}"
             return {
                 "order_id": mock_order_id,
-                "amount": order.amount,
+                "amount": final_amount,
                 "currency": "INR",
-                "mock": True
+                "mock": True,
+                "free": False
             }
         
         razorpay_order = razorpay_client.order.create({
-            "amount": order.amount,
+            "amount": final_amount,
             "currency": "INR",
             "payment_capture": 1
         })
         return {
             "order_id": razorpay_order["id"],
             "amount": razorpay_order["amount"],
-            "currency": razorpay_order["currency"]
+            "currency": razorpay_order["currency"],
+            "free": False
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -589,15 +881,29 @@ async def verify_payment(payment: PaymentVerify):
 
 class UpgradeMembership(BaseModel):
     membership_plan: str
-    payment_order_id: str
-    payment_id: str
-    payment_signature: str
+    payment_order_id: Optional[str] = None
+    payment_id: Optional[str] = None
+    payment_signature: Optional[str] = None
+    discount_code: Optional[str] = None
 
 @api_router.post("/membership/upgrade")
 async def upgrade_membership(upgrade: UpgradeMembership, current_user: dict = Depends(get_current_user)):
     """Upgrade existing user's membership"""
-    try:
-        # Verify payment
+    user_email = current_user.get("email", "").strip().lower()
+    if upgrade.membership_plan not in MEMBERSHIP_PLANS:
+        raise HTTPException(status_code=400, detail="Invalid membership plan")
+
+    final_amount, coupon_info = await calculate_plan_price(
+        upgrade.membership_plan, upgrade.discount_code, user_email
+    )
+
+    if final_amount == 0:
+        # Free upgrade! Skip Razorpay verification
+        is_paid = True
+    else:
+        # Paid upgrade
+        if not (upgrade.payment_order_id and upgrade.payment_id and upgrade.payment_signature):
+            raise HTTPException(status_code=400, detail="Payment verification is required")
         if USE_MOCK_PAYMENT:
             if not (upgrade.payment_order_id.startswith("mock_order_") and upgrade.payment_id.startswith("mock_pay_")):
                 raise HTTPException(status_code=400, detail="Invalid mock payment")
@@ -608,57 +914,69 @@ async def upgrade_membership(upgrade: UpgradeMembership, current_user: dict = De
                 'razorpay_signature': upgrade.payment_signature
             }
             razorpay_client.utility.verify_payment_signature(params_dict)
-        
-        # Validate plan
-        if upgrade.membership_plan not in MEMBERSHIP_PLANS:
-            raise HTTPException(status_code=400, detail="Invalid membership plan")
-        
+            try:
+                rz_payment = razorpay_client.payment.fetch(upgrade.payment_id)
+                if rz_payment.get("amount") != final_amount:
+                    raise HTTPException(status_code=400, detail="Paid amount does not match server-calculated plan price")
+            except HTTPException:
+                raise
+            except Exception as e:
+                logger.warning(f"Could not verify payment amount from Razorpay: {e}")
+        is_paid = True
+
+    # Atomically consume coupon if provided
+    coupon_consumed = False
+    if upgrade.discount_code:
+        consumed = await consume_coupon(upgrade.discount_code, user_email)
+        if not consumed:
+            raise HTTPException(status_code=400, detail="Coupon code is invalid, already used, or has reached its usage limit")
+        coupon_consumed = True
+
+    try:
         plan_info = MEMBERSHIP_PLANS[upgrade.membership_plan]
-        
-        # Calculate expiration
         now = datetime.now(timezone.utc)
         if plan_info["plan"] == "yearly":
             expires = now + timedelta(days=365)
         else:
             expires = now + timedelta(days=30)
         
-        # Update user's membership
+        update_fields = {
+            "is_paid": is_paid,
+            "membership_type": plan_info["type"],
+            "membership_plan": plan_info["plan"],
+            "membership_expires_at": expires.isoformat(),
+            "upgraded_at": now.isoformat()
+        }
+        if upgrade.discount_code:
+            update_fields["discount_code_used"] = upgrade.discount_code.strip().upper()
+
         await db.users.update_one(
             {"_id": current_user["id"]},
-            {
-                "$set": {
-                    "is_paid": True,
-                    "membership_type": plan_info["type"],
-                    "membership_plan": plan_info["plan"],
-                    "membership_expires_at": expires.isoformat(),
-                    "upgraded_at": now.isoformat()
-                }
-            }
+            {"$set": update_fields}
         )
-        
-        # Fetch updated user
-        updated_user = await db.users.find_one({"_id": current_user["id"]})
-        
-        return {
-            "status": "success",
-            "message": f"Successfully upgraded to {plan_info['type'].title()} plan",
-            "user": UserResponse(
-                id=updated_user["_id"],
-                email=updated_user["email"],
-                name=updated_user["name"],
-                phone=updated_user["phone"],
-                created_at=updated_user["created_at"],
-                is_paid=True,
-                membership_type=plan_info["type"],
-                membership_plan=plan_info["plan"],
-                membership_expires_at=expires.isoformat()
-            )
-        }
-    except HTTPException:
-        raise
     except Exception as e:
+        if coupon_consumed:
+            await release_coupon(upgrade.discount_code, user_email)
         logger.error(f"Upgrade failed: {e}")
-        raise HTTPException(status_code=400, detail="Payment verification failed")
+        raise HTTPException(status_code=500, detail="Upgrade failed")
+
+    # Fetch updated user
+    updated_user = await db.users.find_one({"_id": current_user["id"]})
+    return {
+        "status": "success",
+        "message": f"Successfully upgraded to {plan_info['type'].title()} plan",
+        "user": UserResponse(
+            id=updated_user["_id"],
+            email=updated_user["email"],
+            name=updated_user["name"],
+            phone=updated_user["phone"],
+            created_at=updated_user["created_at"],
+            is_paid=True,
+            membership_type=plan_info["type"],
+            membership_plan=plan_info["plan"],
+            membership_expires_at=expires.isoformat()
+        )
+    }
 
 @api_router.get("/membership/plans")
 async def get_membership_plans():
@@ -707,91 +1025,109 @@ async def get_membership_plans():
     }
 
 @api_router.post("/discount/validate")
-async def validate_discount(code: str):
+async def validate_discount(
+    code: Optional[str] = None,
+    email: Optional[str] = None,
+    payload: Optional[DiscountValidatePayload] = None
+):
     """Validate a discount code and return discount info"""
-    result = validate_discount_code(code)
-    if not result:
-        return {"valid": False, "error": "No discount code provided"}
+    actual_code = (payload.code if payload and payload.code else code) or ""
+    actual_email = (payload.email if payload and payload.email else email) or None
+    result = await validate_coupon(actual_code, actual_email)
     return result
 
 @api_router.post("/auth/register", response_model=Token)
 async def register(user: UserRegister):
-    existing_user = await db.users.find_one({"email": user.email})
+    user_email = user.email.strip().lower()
+    existing_user = await db.users.find_one({"email": user_email})
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Validate discount code if provided
-    discount_info = None
-    if user.discount_code:
-        discount_info = validate_discount_code(user.discount_code)
-        if discount_info and not discount_info.get("valid"):
-            raise HTTPException(status_code=400, detail=discount_info.get("error", "Invalid discount code"))
-    
-    # Payment is compulsory - membership_plan must be selected
+    # Membership plan must be selected and valid
     if not user.membership_plan or user.membership_plan not in MEMBERSHIP_PLANS:
         raise HTTPException(status_code=400, detail="Please select a valid membership plan")
     
-    # Payment details are compulsory
-    if not (user.payment_order_id and user.payment_id and user.payment_signature):
-        raise HTTPException(status_code=400, detail="Payment verification is required to register")
+    # Calculate price on server from plan and coupon using submitted email
+    final_amount, coupon_info = await calculate_plan_price(user.membership_plan, user.discount_code, user_email)
     
     is_paid = False
-    membership_type = None
-    membership_plan = None
-    membership_expires_at = None
-    
-    if user.payment_order_id and user.payment_id and user.payment_signature:
+    if final_amount == 0:
+        # Free coupon: skip Razorpay verification completely
+        is_paid = True
+    else:
+        # Paid registration: Payment verification is compulsory
+        if not (user.payment_order_id and user.payment_id and user.payment_signature):
+            raise HTTPException(status_code=400, detail="Payment verification is required to register")
+        
         try:
             if USE_MOCK_PAYMENT:
-                # Verify mock payment
                 if user.payment_order_id.startswith("mock_order_") and user.payment_id.startswith("mock_pay_"):
                     is_paid = True
                 else:
                     raise HTTPException(status_code=400, detail="Invalid mock payment")
             else:
-                # Verify real Razorpay payment
                 params_dict = {
                     'razorpay_order_id': user.payment_order_id,
                     'razorpay_payment_id': user.payment_id,
                     'razorpay_signature': user.payment_signature
                 }
                 razorpay_client.utility.verify_payment_signature(params_dict)
+                try:
+                    rz_payment = razorpay_client.payment.fetch(user.payment_id)
+                    if rz_payment.get("amount") != final_amount:
+                        raise HTTPException(status_code=400, detail="Paid amount does not match server-calculated plan price")
+                except HTTPException:
+                    raise
+                except Exception as e:
+                    logger.warning(f"Could not verify payment amount from Razorpay: {e}")
                 is_paid = True
-            
-            # Set membership details if payment verified
-            if is_paid and user.membership_plan and user.membership_plan in MEMBERSHIP_PLANS:
-                plan_info = MEMBERSHIP_PLANS[user.membership_plan]
-                membership_type = plan_info["type"]
-                membership_plan = plan_info["plan"]
-                
-                # Calculate expiration
-                now = datetime.now(timezone.utc)
-                if membership_plan == "yearly":
-                    expires = now + timedelta(days=365)
-                else:
-                    expires = now + timedelta(days=30)
-                membership_expires_at = expires.isoformat()
-                
+        except HTTPException:
+            raise
         except Exception as e:
             raise HTTPException(status_code=400, detail="Payment verification failed")
     
-    user_id = f"user_{datetime.now(timezone.utc).timestamp()}"
+    # Atomically consume coupon if provided
+    coupon_consumed = False
+    if user.discount_code:
+        consumed = await consume_coupon(user.discount_code, user_email)
+        if not consumed:
+            raise HTTPException(status_code=400, detail="Coupon code is invalid, already used, or has reached its usage limit")
+        coupon_consumed = True
+    
+    plan_info = MEMBERSHIP_PLANS[user.membership_plan]
+    membership_type = plan_info["type"]
+    membership_plan = plan_info["plan"]
+    
+    now = datetime.now(timezone.utc)
+    if membership_plan == "yearly":
+        expires = now + timedelta(days=365)
+    else:
+        expires = now + timedelta(days=30)
+    membership_expires_at = expires.isoformat()
+    
+    user_id = f"user_{now.timestamp()}"
     user_doc = {
         "_id": user_id,
-        "email": user.email,
+        "email": user_email,
         "password": hash_password(user.password),
-        "name": user.name,
-        "phone": user.phone,
+        "name": user.name.strip(),
+        "phone": user.phone.strip(),
         "is_admin": False,
         "is_paid": is_paid,
         "membership_type": membership_type,
         "membership_plan": membership_plan,
         "membership_expires_at": membership_expires_at,
-        "created_at": datetime.now(timezone.utc).isoformat(),
-        "discount_code_used": user.discount_code.upper() if user.discount_code else None
+        "created_at": now.isoformat(),
+        "discount_code_used": user.discount_code.strip().upper() if user.discount_code else None
     }
     
-    await db.users.insert_one(user_doc)
+    try:
+        await db.users.insert_one(user_doc)
+    except Exception as e:
+        if coupon_consumed:
+            await release_coupon(user.discount_code, user_email)
+        logger.error(f"Error registering user: {e}")
+        raise HTTPException(status_code=500, detail="Failed to register user")
     
     access_token = create_access_token(data={"sub": user_id})
     
@@ -2144,11 +2480,35 @@ async def init_admin_user():
     except Exception as e:
         logger.error(f"Error initializing admin user: {e}")
 
+async def init_default_coupons():
+    try:
+        count = await db.coupons.count_documents({})
+        if count == 0:
+            now = datetime.now(timezone.utc)
+            expiry = datetime(2026, 6, 30, 23, 59, 59, tzinfo=timezone.utc)
+            await db.coupons.insert_one({
+                "_id": f"cpn_{now.timestamp()}",
+                "code": "EARLYBIRD",
+                "discount_percent": 50,
+                "allowed_email": None,
+                "max_uses": None,
+                "used_count": 0,
+                "used_by": [],
+                "expires_at": expiry.isoformat(),
+                "is_active": True,
+                "created_at": now.isoformat(),
+                "created_by": "system"
+            })
+            logger.info("Default EARLYBIRD coupon seeded into database")
+    except Exception as e:
+        logger.error(f"Error initializing default coupons: {e}")
+
 @app.on_event("startup")
 async def startup_event():
-    """Run monthly cleanup check and initialize admin user on server startup"""
+    """Run monthly cleanup check and initialize admin user and default coupons on server startup"""
     await clear_monthly_tasks()
     await init_admin_user()
+    await init_default_coupons()
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
